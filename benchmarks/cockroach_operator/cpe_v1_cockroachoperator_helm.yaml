@@ -1,0 +1,19 @@
+apiVersion: cpe.cogadvisor.io/v1
+kind: BenchmarkOperator
+metadata:
+  name: cockroach
+  namespace: default
+spec:
+  apiVersion: batch/v1
+  kind: Job
+  deploySpec:
+    namespace: cockroach-operator-system
+    helm:
+      entity: cockroachdb
+      release: cockroach-release
+      repoName: cockroachdb-helm-charts
+      url: https://raw.githubusercontent.com/sunya-ch/cockroach-helm-charts/master/cockroachdb
+      valuesYaml: |
+        init:
+          nodeSelector:
+            node.kubernetes.io/instance-type: bx2.4x16

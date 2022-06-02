@@ -1,0 +1,43 @@
+apiVersion: cpe.cogadvisor.io/v1
+kind: Benchmark
+metadata:
+  name: tpcc
+  namespace: default # need privilege for roks
+spec:
+  benchmarkOperator:
+    name: cockroach
+    namespace: default
+  benchmarkSpec: |
+    template:
+      spec:
+        containers:
+          - name: driver
+            image: res-cpe-team-docker-local.artifactory.swg-devops.com/cockroach/tpcc:latest
+            env:
+            - name: cockroach0
+              value: postgres://root@cockroach-release-cockroachdb-0.cockroach-release-cockroachdb.cockroach-operator-system.svc.cluster.local:26257?sslmode=disable
+            - name: cockroach1
+              value: postgres://root@cockroach-release-cockroachdb-1.cockroach-release-cockroachdb.cockroach-operator-system.svc.cluster.local:26257?sslmode=disable
+            - name: cockroach2
+              value: postgres://root@cockroach-release-cockroachdb-2.cockroach-release-cockroachdb.cockroach-operator-system.svc.cluster.local:26257?sslmode=disable
+            - name: warehouse
+              value: "2000"
+            - name: active_warehouse
+              value: "2000"
+            command: ["/bin/bash", "-c"]
+            args:
+            - /root/tpcc.sh -s -W $warehouse -A $active_warehouse $cockroach0 $cockroach1 $cockroach2 && cat /root/tpcc-results/tpcc-results-${active_warehouse}.txt
+        imagePullSecrets:
+          - name: res-cpe-team-docker-local
+        restartPolicy: Never
+        nodeSelector:
+          ibm-cloud.kubernetes.io/worker-pool-name: "cpe"
+    backoffLimit: 4
+  parserKey: tpcc
+  repetition: 5
+  interval: 1000
+  iterationSpec:
+    iterations:
+    - name: warehouse
+      location: ".template.spec.containers[0].env[name=warehouse].value;.template.spec.containers[0].env[name=active_warehouse].value"
+    sequential: true

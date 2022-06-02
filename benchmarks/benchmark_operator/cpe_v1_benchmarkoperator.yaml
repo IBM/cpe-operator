@@ -1,0 +1,24 @@
+apiVersion: cpe.cogadvisor.io/v1
+kind: BenchmarkOperator
+metadata:
+  name: ripsaw
+spec:
+  apiVersion: ripsaw.cloudbulldozer.io/v1alpha1
+  kind: Benchmark
+  crd:
+    host: https://raw.githubusercontent.com/cloud-bulldozer/benchmark-operator/master
+    paths:
+    - /resources/crds/ripsaw_v1alpha1_ripsaw_crd.yaml
+  deploySpec:
+    namespace: my-ripsaw
+    yaml:
+      host: https://raw.githubusercontent.com/cloud-bulldozer/benchmark-operator/master
+      paths:
+      - /deploy/10_service_account.yaml
+      - /deploy/20_role.yaml
+      - /deploy/25_role.yaml
+      - /deploy/30_role_binding.yaml
+      - /deploy/35_role_binding.yaml
+      - /deploy/40_cluster_role_kubevirt.yaml
+      - /deploy/50_pod_security_policy.yml
+      - /resources/operator.yaml

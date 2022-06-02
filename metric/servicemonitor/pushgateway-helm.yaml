@@ -1,0 +1,20 @@
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: pushgateway
+  namespace: cpe-monitoring-system
+  labels:
+    app: prometheus-pushgateway
+    release: prometheus
+spec:
+  endpoints:
+  - honorLabels: true
+    interval: 30s
+    path: /metrics
+    port: http
+  namespaceSelector:
+    matchNames:
+    - cpe-monitoring-system
+  selector:
+    matchLabels:
+      app: prometheus-pushgateway

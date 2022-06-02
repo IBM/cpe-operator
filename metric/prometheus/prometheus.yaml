@@ -1,0 +1,89 @@
+apiVersion: monitoring.coreos.com/v1
+kind: Prometheus
+metadata:
+  name: cpe-prometheus
+  namespace: cpe-monitoring-system
+  labels:
+    prometheus: cpe-prometheus
+spec:
+  serviceAccountName: prometheus-k8s
+  serviceMonitorSelector: {}
+  externalLabels:
+    cluster: ${CLUSTER_ID}
+  thanos:
+    listenLocal: true
+    objectStorageConfig:
+      key: cos-config.yaml
+      name: thanos-objectstorage
+  alerting:
+    alertmanagers:
+      - name: alertmanager-main
+        namespace: cpe-monitoring-system
+        port: web
+  affinity:
+    podAntiAffinity:
+      preferredDuringSchedulingIgnoredDuringExecution:
+        - podAffinityTerm:
+            labelSelector:
+              matchExpressions:
+                - key: prometheus
+                  operator: In
+                  values:
+                    - cpe-prometheus
+            namespaces:
+              - cpe-monitoring-system
+            topologyKey: kubernetes.io/hostname
+          weight: 100
+  probeSelector: {}
+  containers:
+    - args:
+        - '--insecure-listen-address=127.0.0.1:9095'
+        - '--upstream=http://127.0.0.1:9090'
+        - '--label=namespace'
+      image: >-
+        quay.io/openshift-release-dev/ocp-v4.0-art-dev@sha256:50b1e6c33afec7add66d9c3a4ef72b035f87d9cfb64561e45c69635d040dd022
+      name: prom-label-proxy
+      resources:
+        requests:
+          cpu: 1m
+          memory: 20Mi
+      terminationMessagePolicy: FallbackToLogsOnError
+    - args:
+        - sidecar
+        - '--prometheus.url=http://localhost:9090/'
+        - '--tsdb.path=/prometheus'
+        - '--grpc-address=[$(POD_IP)]:10901'
+        - '--http-address=127.0.0.1:10902'
+        - '--objstore.config=$(OBJSTORE_CONFIG)'
+      name: thanos-sidecar
+      resources:
+        requests:
+          cpu: 1m
+    - name: prometheus
+      resources: {}
+      # for openshift ca bundle
+      volumeMounts:
+        - mountPath: /etc/prometheus/configmaps/serving-certs-ca-bundle
+          name: configmap-serving-certs-ca-bundle
+          readOnly: true
+        - mountPath: /etc/prometheus/configmaps/kubelet-serving-ca-bundle
+          name: configmap-kubelet-serving-ca-bundle
+          readOnly: true
+    - name: config-reloader
+      resources:
+        requests:
+          cpu: 1m
+          memory: 10Mi
+  podMonitorSelector: {}
+  replicas: 2
+  ruleSelector: {}
+  # for openshift ca bundle
+  volumes:
+    - configMap:
+        defaultMode: 420
+        name: serving-certs-ca-bundle
+      name: configmap-serving-certs-ca-bundle
+    - configMap:
+        defaultMode: 420
+        name: kubelet-serving-ca-bundle
+      name: configmap-kubelet-serving-ca-bundle

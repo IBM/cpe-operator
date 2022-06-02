@@ -1,0 +1,40 @@
+# Binaries for programs and plugins
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+
+# Test binary, built with `go test -c`
+*.test
+
+# Output of the go coverage tool, specifically when used with LiteIDE
+*.out
+
+go.sum
+
+# Dependency directories (remove the comment below to include it)
+# vendor/
+.DS_Store
+config/secret
+bundle
+*/*/*copy*
+*/*copy*
+*copy*
+benchmarks/run_result
+bin
+testbin
+_all-built-manifests.yaml
+all-built-manifests.yaml
+iteration/node-tuning
+*.txt
+*.log
+transfer.sh
+kubectl
+config-old/
+
+benchmarks/benchmark_operator/cpe_v1_benchmark_sysbench_*
+benchmarks/benchmark_operator/multi-cluster
+benchmarks/*/note*
+
+hack

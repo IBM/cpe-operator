@@ -1,0 +1,29 @@
+kind: Service
+apiVersion: v1
+metadata:
+  name: prometheus-default
+  namespace: kube-system
+spec:
+  type: ExternalName
+  externalName: prometheus-prometheus-oper-prometheus.cpe-monitoring-system.svc.cluster.local
+  ports:
+  - port: 9090
+---
+apiVersion: extensions/v1beta1
+kind: Ingress
+metadata:
+ annotations:
+  kubernetes.io/ingress.class: public-iks-k8s-nginx
+  nginx.ingress.kubernetes.io/ssl-redirect: "false"
+  nginx.ingress.kubernetes.io/connection-proxy-header: "keep-alive"
+ name: insecure-prometheus
+ namespace: kube-system
+spec:
+  rules:
+  - host: insecure-prometheus.trl-osk-iks-b8ef7649236a07f2b2866d2585e12cb2-0000.jp-osa.containers.appdomain.cloud
+    http:
+      paths:
+      - backend:
+          serviceName: prometheus-default
+          servicePort: 9090
+        path: /

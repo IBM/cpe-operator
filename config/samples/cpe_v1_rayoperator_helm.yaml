@@ -1,0 +1,18 @@
+apiVersion: cpe.cogadvisor.io/v1
+kind: BenchmarkOperator
+metadata:
+  name: ray
+spec:
+  apiVersion: batch/v1
+  kind: Job
+  crd:
+    host: https://raw.githubusercontent.com/ray-project/ray/master/deploy/charts/ray/crds
+    paths:
+    - /cluster_crd.yaml
+  deploySpec:
+    namespace: ray-operator-system
+    helm:
+      entity: ray-clone
+      release: example-cluster
+      repoName: ray-clone
+      url: https://raw.githubusercontent.com/sunya-ch/ray-repo-clone/master/deploy/charts/ray

@@ -1,0 +1,43 @@
+apiVersion: cpe.cogadvisor.io/v1
+kind: Benchmark
+metadata:
+  name: coremark
+  namespace: default
+spec:
+  benchmarkOperator:
+    name: none
+    namespace: default
+  benchmarkSpec: |
+    backoffLimit: 0
+    template:
+      spec:
+        imagePullSecrets:
+        - name: res-cpe-team-docker-local
+        containers:
+          - name: coremark
+            image: res-cpe-team-docker-local.artifactory.swg-devops.com/coremark:ubi
+            env:
+            - name: THREADNUM
+              value: "1thread"
+            command:
+            - sh
+            - -c
+            - 'for i in `seq 1 10`; do ./coremark-${THREADNUM}.exe; done'
+        restartPolicy: Never
+        nodeSelector:
+          ibm-cloud.kubernetes.io/worker-pool-name: "cpe"
+  parserKey: coremark
+  repetition: 10
+  iterationSpec:
+    iterations:
+    - name: t
+      location: ".template.spec.containers[0].env[name=THREADNUM].value"
+      values:
+      - "4threads"
+      - "8threads"
+    configurations:
+    - name: image
+      location: ".template.spec.containers[0].image"
+      values:
+      - "res-cpe-team-docker-local.artifactory.swg-devops.com/coremark:ubuntu"
+    sequential: true

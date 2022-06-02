@@ -1,0 +1,99 @@
+apiVersion: cpe.cogadvisor.io/v1
+kind: Benchmark
+metadata:
+  name: mpigloo
+  namespace: default
+spec:
+  benchmarkOperator:
+    name: mpi
+    namespace: default
+  benchmarkSpec: |
+    slotsPerWorker: 1
+    cleanPodPolicy: Running
+    mpiReplicaSpecs:
+      Launcher:
+        replicas: 1
+        template:
+          spec:
+            hostIPC: true
+            hostPID: true
+            dnsPolicy: ClusterFirstWithHostNet
+            hostNetwork: true
+            containers:
+            - image: uk.icr.io/satellite/gloo:mpibench
+              imagePullPolicy: Always
+              name: gloo-master
+              command:
+              - mpirun
+              - --allow-run-as-root
+              - -np
+              - "2"
+              - /gloo/build/gloo/benchmark/benchmark
+              - --threads
+              - $(THREADS)
+              - --transport
+              - tcp
+              - --tcp-device
+              - $(TCPDEVICE)
+              - --no-verify
+              - $(BENCHMARK)
+              env:
+              - name: THREADS
+                value: "2"
+              - name: TCPDEVICE
+                value: eth0,eth1
+              - name: BENCHMARK
+                value: allreduce_ring
+            imagePullSecrets:
+            - name: all-icr-io
+      Worker:
+        replicas: 2
+        template:
+          spec:
+            hostIPC: true
+            hostPID: true
+            dnsPolicy: ClusterFirstWithHostNet
+            hostNetwork: true
+            affinity:
+              podAntiAffinity:
+                preferredDuringSchedulingIgnoredDuringExecution:
+                - weight: 100
+                  podAffinityTerm:
+                    labelSelector:
+                      matchExpressions:
+                      - key: mpi_job_name
+                        operator: In
+                        values:
+                        - mpigloo
+                    topologyKey: kubernetes.io/hostname
+            containers:
+            - image: uk.icr.io/satellite/gloo:mpibench
+              imagePullPolicy: Always
+              name: gloo-worker
+            imagePullSecrets:
+            - name: all-icr-io
+  iterationSpec:
+    sequential: true
+    iterations:
+      - name: test
+        location: ".mpiReplicaSpecs.Launcher.template.spec.containers[0].env[name=BENCHMARK].benchmark"
+        values:
+        - allreduce_ring
+        - allreduce_ring_chunked
+        - allreduce_halving_doubling
+        - allreduce_bcube
+    configurations:
+      - name: threads
+        location: ".mpiReplicaSpecs.Launcher.template.spec.containers[0].env[name=THREADS].value"
+        values:
+        - "2"
+        - "4"
+        - "8"
+      - name: dev
+        location: ".mpiReplicaSpecs.Launcher.template.spec.containers[0].env[name=TCPDEVICE].value"
+        values:
+        - eth0
+        - eth0,eth1
+  repetition: 5
+  interval: 60
+  parserKey: gloo

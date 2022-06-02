@@ -1,0 +1,20 @@
+apiVersion: cpe.cogadvisor.io/v1
+kind: BenchmarkOperator
+metadata:
+  name: ripsaw
+  namespace: default
+spec:
+  apiVersion: ripsaw.cloudbulldozer.io/v1alpha1
+  kind: Benchmark
+  adaptor: ripsaw
+  crd:
+    host: https://raw.githubusercontent.com/sunya-ch/benchmark-operator/master
+    paths:
+    - /config/crd/bases/ripsaw.cloudbulldozer.io_benchmarks.yaml
+  deploySpec:
+    namespace: my-ripsaw
+    helm:
+      entity: benchmark-operator
+      release: basic-benchmark-operator
+      repoName: benchmark-operator
+      url: https://raw.githubusercontent.com/sunya-ch/benchmark-operator/master/charts/benchmark-operator
