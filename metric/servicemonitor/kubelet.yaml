@@ -1,0 +1,104 @@
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: kubelet
+spec:
+  endpoints:
+  - bearerTokenFile: /var/run/secrets/kubernetes.io/serviceaccount/token
+    honorLabels: true
+    port: https-metrics
+    metricRelabelings:
+    - regex: (.*)(\-cpeh)(.*)
+      replacement: '${1}'
+      sourceLabels:
+      - pod
+      targetLabel: benchmark
+    - regex: '(.*)(\-cpeh)(\-[0-9a-z]+)(\-[0-9a-z]+)'
+      replacement: '${1}${2}${3}'
+      sourceLabels:
+      - pod
+      targetLabel: job
+    relabelings:
+    - sourceLabels:
+      - __metrics_path__
+      targetLabel: metrics_path
+    scheme: https
+    tlsConfig:
+      caFile: /var/run/secrets/kubernetes.io/serviceaccount/ca.crt
+      insecureSkipVerify: true
+  - bearerTokenFile: /var/run/secrets/kubernetes.io/serviceaccount/token
+    honorLabels: true
+    path: /metrics/cadvisor
+    port: https-metrics
+    metricRelabelings:
+    - regex: (.*)(\-cpeh)(.*)
+      replacement: '${1}'
+      sourceLabels:
+      - pod
+      targetLabel: benchmark
+    - regex: '(.*)(\-cpeh)(\-[0-9a-z]+)(\-[0-9a-z]+)'
+      replacement: '${1}${2}${3}'
+      sourceLabels:
+      - pod
+      targetLabel: job
+    relabelings:
+    - sourceLabels:
+      - __metrics_path__
+      targetLabel: metrics_path
+    scheme: https
+    tlsConfig:
+      caFile: /var/run/secrets/kubernetes.io/serviceaccount/ca.crt
+      insecureSkipVerify: true
+  - bearerTokenFile: /var/run/secrets/kubernetes.io/serviceaccount/token
+    honorLabels: true
+    path: /metrics/probes
+    port: https-metrics
+    metricRelabelings:
+    - regex: (.*)(\-cpeh)(.*)
+      replacement: '${1}'
+      sourceLabels:
+      - pod
+      targetLabel: benchmark
+    - regex: '(.*)(\-cpeh)(\-[0-9a-z]+)(\-[0-9a-z]+)'
+      replacement: '${1}${2}${3}'
+      sourceLabels:
+      - pod
+      targetLabel: job
+    relabelings:
+    - sourceLabels:
+      - __metrics_path__
+      targetLabel: metrics_path
+    scheme: https
+    tlsConfig:
+      caFile: /var/run/secrets/kubernetes.io/serviceaccount/ca.crt
+      insecureSkipVerify: true
+  - bearerTokenFile: /var/run/secrets/kubernetes.io/serviceaccount/token
+    honorLabels: true
+    path: /metrics/resource/v1alpha1
+    port: https-metrics
+    metricRelabelings:
+    - regex: (.*)(\-cpeh)(.*)
+      replacement: '${1}'
+      sourceLabels:
+      - pod
+      targetLabel: benchmark
+    - regex: '(.*)(\-cpeh)(\-[0-9a-z]+)(\-[0-9a-z]+)'
+      replacement: '${1}${2}${3}'
+      sourceLabels:
+      - pod
+      targetLabel: job
+    relabelings:
+    - sourceLabels:
+      - __metrics_path__
+      targetLabel: metrics_path
+    scheme: https
+    tlsConfig:
+      caFile: /var/run/secrets/kubernetes.io/serviceaccount/ca.crt
+      insecureSkipVerify: true
+  jobLabel: k8s-app
+  namespaceSelector:
+    matchNames:
+    - kube-system
+  selector:
+    matchLabels:
+      k8s-app: kubelet

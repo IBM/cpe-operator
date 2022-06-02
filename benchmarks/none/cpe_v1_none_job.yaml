@@ -1,0 +1,18 @@
+apiVersion: cpe.cogadvisor.io/v1
+kind: Benchmark
+metadata:
+  name: pi-job
+  namespace: default
+spec:
+  benchmarkOperator:
+    name: none
+    namespace: default
+  benchmarkSpec: |
+    template:
+      spec:
+        containers:
+        - name: pi
+          image: perl
+          command: ["perl",  "-Mbignum=bpi", "-wle", "print bpi(2000)"]
+        restartPolicy: Never
+    backoffLimit: 4

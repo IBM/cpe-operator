@@ -1,0 +1,91 @@
+kind: Deployment
+apiVersion: apps/v1
+metadata:
+  name: thanos-query
+  namespace: cpe-monitoring-system
+  labels:
+    app: thanos-query
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: thanos-query
+  template:
+    metadata:
+      creationTimestamp: null
+      labels:
+        app: thanos-query
+        thanos-peers: 'true'
+    spec:
+      containers:
+        - name: thanos-query
+          image: >-
+            quay.io/openshift-release-dev/ocp-v4.0-art-dev@sha256:134e9410cba0822b12f2b9986152d6ab338cb54be75f6182536555ecb219498c
+          args:
+            - query
+            - '--log.level=info'
+            - '--grpc-address=0.0.0.0:10901'
+            - '--http-address=0.0.0.0:9090'
+            - '--query.replica-label=prometheus_replica'
+            - '--query.replica-label=thanos_ruler_replica'
+            - >-
+              --store=dnssrv+_grpc._tcp.prometheus-operated.cpe-monitoring-system.svc.cluster.local
+            - >-
+              --store=dnssrv+_grpc._tcp.thanos-store.cpe-monitoring-system.svc.cluster.local
+            - >-
+              --rule=dnssrv+_grpc._tcp.prometheus-operated.cpe-monitoring-system.svc.cluster.local
+          ports:
+            - name: http
+              containerPort: 10902
+              protocol: TCP
+            - name: grpc
+              containerPort: 10901
+              protocol: TCP
+            - name: cluster
+              containerPort: 10900
+              protocol: TCP
+          resources: {}
+          terminationMessagePath: /dev/termination-log
+          terminationMessagePolicy: File
+          imagePullPolicy: IfNotPresent
+      restartPolicy: Always
+      terminationGracePeriodSeconds: 30
+      dnsPolicy: ClusterFirst
+      securityContext: {}
+      schedulerName: default-scheduler
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 25%
+      maxSurge: 25%
+  revisionHistoryLimit: 10
+  progressDeadlineSeconds: 600
+---
+kind: Service
+apiVersion: v1
+metadata:
+  annotations:
+    prometheus.io/path: /metrics
+    prometheus.io/port: '10902'
+    prometheus.io/scrape: 'true'
+  name: thanos-query
+  labels:
+    app: thanos-query
+    jobLabel: thanos
+    release: prometheus-operator
+spec:
+  ports:
+    - name: grpc
+      protocol: TCP
+      port: 10901
+      targetPort: 10901
+    - name: http
+      protocol: TCP
+      port: 9090
+      targetPort: 9090
+  selector:
+    app: thanos-query
+  clusterIP: 172.21.197.159
+  type: ClusterIP
+  sessionAffinity: None
+

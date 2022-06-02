@@ -1,0 +1,27 @@
+apiVersion: build.openshift.io/v1
+kind: BuildConfig
+metadata:
+  name: ray-example
+  labels:
+    app: ray-example
+spec:
+  triggers: 
+    - type: "GitHub"
+      github:
+        secret: "rayrepoclone"
+  source:
+    type: Git
+    git:
+      uri: https://github.com/sunya-ch/ray-repo-clone
+    contextDir: docker/ray
+  strategy:
+    type: Docker                      
+    dockerStrategy:
+      dockerfilePath: Dockerfile
+      forcePull: true
+  output:
+    to:
+      kind: ImageStreamTag
+      name: example-ray-job-image:latest
+    pushSecret:
+      name: res-cpe-team-docker-local

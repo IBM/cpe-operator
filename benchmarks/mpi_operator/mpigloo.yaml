@@ -1,0 +1,65 @@
+apiVersion: kubeflow.org/v1alpha2
+kind: MPIJob
+metadata:
+  name: mpigloo
+spec:
+  slotsPerWorker: 1
+  cleanPodPolicy: Running
+  mpiReplicaSpecs:
+    Launcher:
+      replicas: 1
+      template:
+        metadata:
+          annotations:
+            k8s.v1.cni.cncf.io/networks: multi-nic-sample
+        spec:
+          containers:
+          - image: uk.icr.io/satellite/gloo:mpibench
+            name: gloo-master
+            command:
+            - mpirun
+            - --allow-run-as-root
+            - -np
+            - "2"
+            - /benchmark
+            - --threads
+            - $(THREADS)
+            - --transport
+            - tcp
+            - --tcp-device
+            - $(TCPDEVICE)
+            - --no-verify
+            - $(BENCHMARK)
+            env:
+            - name: THREADS
+              value: "4"
+            - name: TCPDEVICE
+              value: net1-0,net1-1,net1-2,net1-3
+            - name: BENCHMARK
+              value: allreduce_ring
+          imagePullSecrets:
+          - name: gloo-icr-io
+    Worker:
+      replicas: 2
+      template:
+        metadata:
+          annotations:
+            k8s.v1.cni.cncf.io/networks: multi-nic-sample
+        spec:
+          affinity:
+            podAntiAffinity:
+              preferredDuringSchedulingIgnoredDuringExecution:
+              - weight: 100
+                podAffinityTerm:
+                  labelSelector:
+                    matchExpressions:
+                    - key: mpi_job_name
+                      operator: In
+                      values:
+                      - mpigloo
+                  topologyKey: kubernetes.io/hostname
+          containers:
+          - image: uk.icr.io/satellite/gloo:mpibench
+            name: gloo-worker
+          imagePullSecrets:
+          - name: gloo-icr-io

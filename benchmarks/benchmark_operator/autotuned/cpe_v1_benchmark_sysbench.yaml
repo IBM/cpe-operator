@@ -1,0 +1,50 @@
+apiVersion: cpe.cogadvisor.io/v1
+kind: Benchmark
+metadata:
+  name: sysbench
+  namespace: my-ripsaw
+spec:
+  benchmarkOperator:
+    name: ripsaw
+    namespace: default
+  benchmarkSpec: |
+    workload:
+      name: sysbench
+      args:
+        nodeselector:
+          profile: openshift-default
+        enabled: true
+        pin_node: 10.248.128.4
+        tests:
+        - name: cpu
+          parameters:
+            cpu-max-prime: 2000
+            threads: 4
+        - name: fileio
+          parameters:
+            file-test-mode: rndrw
+        - name: memory
+          parameters:
+            threads: 4
+  parserKey: sysbench
+  iterationSpec:
+    configurations:
+    - name: filemode
+      location: .workload.args.tests[1].parameters.file-test-mode
+    - name: maxprime
+      location: .workload.args.tests[0].parameters.cpu-max-prime
+    iterations:
+    - name: cpu_threads
+      location: .workload.args.tests[0].parameters.threads
+    - name: mem_threads
+      location: .workload.args.tests[2].parameters.threads
+    sequential: true
+    nodeSelection:
+      location: ".workload.args.nodeselector"
+      values:
+        - "auto-tuned"
+      selector:
+        matchLabels:
+          ibm-cloud.kubernetes.io/worker-pool-name: "cpe"
+  interval: 30
+  repetition: 10

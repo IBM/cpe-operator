@@ -1,0 +1,26 @@
+- job_name: 'insecure-federate/TRL-OSK-IKS'
+  scrape_interval: 1m
+  scrape_timeout: 30s
+  honor_labels: true
+  metrics_path: '/federate'
+  params:
+      'match[]':
+      - '{job=~".*"}'
+  static_configs:
+    - targets:
+      - 'insecure-prometheus.trl-osk-iks-b8ef7649236a07f2b2866d2585e12cb2-0000.jp-osa.containers.appdomain.cloud'
+      labels:
+        origin: TRL-OSK-IKS
+- job_name: 'insecure-federate/eks-tokyo'
+  scrape_interval: 1m
+  scrape_timeout: 30s
+  honor_labels: true
+  metrics_path: '/federate'
+  params:
+      'match[]':
+      - '{job=~".*"}'
+  static_configs:
+    - targets:
+      - 'k8s-cpemonit-insecure-1817c74854-190086087.ap-northeast-1.elb.amazonaws.com'
+      labels:
+        origin: eks-tokyo

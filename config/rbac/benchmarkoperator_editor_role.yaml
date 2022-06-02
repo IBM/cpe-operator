@@ -1,0 +1,24 @@
+# permissions for end users to edit benchmarkoperators.
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: benchmarkoperator-editor-role
+rules:
+- apiGroups:
+  - cpe.cogadvisor.io
+  resources:
+  - benchmarkoperators
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - cpe.cogadvisor.io
+  resources:
+  - benchmarkoperators/status
+  verbs:
+  - get

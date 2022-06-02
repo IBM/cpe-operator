@@ -1,0 +1,29 @@
+apiVersion: cpe.cogadvisor.io/v1
+kind: Benchmark
+metadata:
+  name: cpe-benchmark-ext-sample
+  namespace: default
+spec:
+  benchmarkOperator:
+    name: ripsaw
+    namespace: my-ripsaw
+  benchmarkSpec: |
+    workload:
+      name: flent
+      args:
+        hostnetwork: false
+        multus:
+          enabled: false
+        pin: false
+        pin_server: "node-0"
+        pin_client: "node-1"
+        pair: 1
+        test_types:
+        - tcp_download
+      runtime: 30
+  sidecar: true
+  exportDst: 
+  - prometheus
+  - sysdig
+
+  

@@ -1,0 +1,68 @@
+apiVersion: cpe.cogadvisor.io/v1
+kind: Benchmark
+metadata:
+  name: mpilat
+  namespace: default
+spec:
+  benchmarkOperator:
+    name: mpi
+    namespace: default
+  benchmarkSpec: |
+    slotsPerWorker: 1
+    cleanPodPolicy: Running
+    mpiReplicaSpecs:
+      Launcher:
+        replicas: 1
+        template:
+          spec:
+            containers:
+            - image: res-cpe-team-docker-local.artifactory.swg-devops.com/osubenchmark:5.6.3
+              name: mpi-bench-master
+              command:
+              - mpirun
+              - --allow-run-as-root
+              - -np
+              - "2"
+              - /osu-micro-benchmarks-5.6.3/mpi/pt2pt/osu_latency
+              - -m
+              - "4194304"
+            imagePullSecrets:
+            - name: res-cpe-team-docker-local
+            nodeSelector:
+              ibm-cloud.kubernetes.io/zone: jp-osa-1
+      Worker:
+        replicas: 2
+        template:
+          spec:
+            affinity:
+              podAntiAffinity:
+                preferredDuringSchedulingIgnoredDuringExecution:
+                - weight: 100
+                  podAffinityTerm:
+                    labelSelector:
+                      matchExpressions:
+                      - key: mpi_job_name
+                        operator: In
+                        values:
+                        - osu-benchmark-bw
+                    topologyKey: kubernetes.io/hostname
+            containers:
+            - image: res-cpe-team-docker-local.artifactory.swg-devops.com/osubenchmark:5.6.3
+              name: mpi-bench-worker
+            imagePullSecrets:
+            - name: res-cpe-team-docker-local
+  repetition: 2
+  iterationSpec:
+    sequential: true
+    minimize: true
+    iterations:
+      - name: maxsize
+        location: ".mpiReplicaSpecs.Launcher.template.spec.containers[0].command[6]"
+    nodeSelection:
+      location: ".mpiReplicaSpecs.Worker.template.spec.nodeSelector"
+      values:
+      - "openshift-iks"
+      selector:
+        matchLabels:
+          ibm-cloud.kubernetes.io/worker-pool-name: hpc-sandbox
+  parserKey: osu

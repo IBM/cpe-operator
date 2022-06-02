@@ -1,0 +1,5 @@
+## Append samples you want in your CSV to this file as resources ##
+resources:
+- cpe_v1_benchmark.yaml
+- cpe_v1_benchmarkoperator.yaml
+#+kubebuilder:scaffold:manifestskustomizesamples

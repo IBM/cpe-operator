@@ -1,0 +1,80 @@
+apiVersion: cpe.cogadvisor.io/v1
+kind: Benchmark
+metadata:
+  name: ray-nlp-benchmark
+  namespace: ray-operator-system
+spec:
+  benchmarkOperator:
+    name: ray
+    namespace: default
+  benchmarkSpec: |
+    backoffLimit: 0
+    template:
+      spec:
+        restartPolicy: Never
+        nodeSelector:
+          nodeType: ray
+        imagePullSecrets:
+        - name: all-icr-io
+        containers:
+        - name: codait-nlp
+          image: jp.icr.io/tyos/codait_nlp_benchmark:0609-ray-nightly
+          imagePullPolicy: Always
+          volumeMounts:
+          - mountPath: /dev/shm
+            name: dshm
+          command:
+          - sh
+          - -c
+          - |
+            mkdir -p /dev/shm/codait_nlp
+            echo "whoami? "$(whoami)
+            echo "Where is home? "$HOME
+            echo "Where am I? "$(pwd)
+            echo "Permissions of ../ :    "$(ls -ld ../)
+            echo "Permissions of ./ :    "$(ls -ld ./)
+            echo "Permissions on my stuff: " && ls -l
+            echo "OPENBLAS_NUM_THREADS="$(OPENBLAS_NUM_THREADS)
+            echo "MKL_NUM_THREADS="$(MKL_NUM_THREADS)
+            echo "OMP_NUM_THREADS="$(OMP_NUM_THREADS)
+            python --version
+            ray --version
+            python3 -u codait_nlp_benchmark.py
+            for f in `find /dev/shm/codait_nlp -type f`; do echo ========= $f =========; cat $f; done
+          env:
+          - name: RAY_CONNECT_MODE
+            value: "RAY_K8_OPERATOR"
+          - name: HEAD_SERVICE_IP_ENV
+            value: "example-cluster-ray-head"
+          - name: HEAD_SERVICE_CLIENT_PORT_ENV
+            value: "10001"
+          - name: OUT_DIR
+            value: "/dev/shm/codait_nlp/"
+          - name: TOKENIZERS_PARALLELISM
+            value: "false"
+          - name: OPENBLAS_NUM_THREADS
+            value: "1"
+          - name: MKL_NUM_THREADS
+            value: "1"
+          - name: OMP_NUM_THREADS
+            value: "1"
+          - name: VECLIB_MAXIMUM_THREADS
+            value: "1"
+          - name: NUMEXPR_NUM_THREADS
+            value: "1"
+          - name: NRUNS_SERIAL
+            value: "10"
+          - name: NRUNS_DPARALLEL
+            value: "10"
+          - name: NDOCS_INPUT
+            value: "1000"
+          - name: MAX_SCALE
+            value: "8"
+        volumes:
+        - name: dshm
+          emptyDir:
+            medium: Memory
+  sidecar: false
+  exportDst: 
+  - prometheus
+  - sysdig

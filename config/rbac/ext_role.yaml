@@ -1,0 +1,131 @@
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  creationTimestamp: null
+  name: extend-cluster-role
+rules:
+- apiGroups:
+  - apps
+  resources:
+  - daemonsets
+  - deployments
+  - deployments/finalizers
+  - replicasets
+  - statefulsets
+  verbs:
+  - '*'
+- apiGroups:
+  - ""
+  resources:
+  - namespaces
+  - serviceaccounts
+  - configmaps
+  - daemonsets
+  - endpoints
+  - events
+  - persistentvolumeclaims
+  - pods
+  - nodes
+  - pods/log
+  - secrets
+  - services
+  - virtualmachineinstances
+  verbs:
+  - '*'
+- apiGroups:
+  - apiextensions.k8s.io
+  resources:
+  - customresourcedefinitions
+  verbs:
+  - '*'
+- apiGroups:
+  - rbac.authorization.k8s.io
+  resources:
+  - clusterrolebindings
+  - clusterroles
+  - rolebindings
+  - roles
+  verbs:
+  - '*'
+- apiGroups:
+  - policy
+  resources:
+  - podsecuritypolicies
+  - poddisruptionbudgets
+  verbs:
+  - '*'
+- apiGroups:
+  - networking.k8s.io
+  resources:
+  - networkpolicies
+  verbs:
+  - '*'
+- apiGroups:
+    - kubevirt.io
+  resources:
+    - virtualmachineinstances
+    - virtualmachines
+    - virtualmachineinstancepresets
+    - virtualmachineinstancereplicasets
+  verbs:
+  - '*'
+- apiGroups:
+  - monitoring.coreos.com
+  resources:
+  - servicemonitors
+  verbs:
+  - '*'
+- apiGroups:
+  - batch
+  - extensions
+  resources:
+  - jobs
+  verbs:
+  - get
+  - list
+  - watch
+  - create
+  - update
+  - patch
+  - delete
+- apiGroups:
+  - security.openshift.io
+  resourceNames:
+  - privileged
+  resources:
+  - securitycontextconstraints
+  verbs:
+  - use
+- apiGroups:
+  - hyperfoil.io
+  resources:
+  - hyperfoils
+  verbs:
+  - '*'
+- apiGroups:
+  - k8s.cni.cncf.io
+  resources:
+  - network-attachment-definitions
+  verbs:
+  - '*'
+- apiGroups:
+  - build.openshift.io
+  resources:
+  - builds
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
+  - tuned.openshift.io
+  resources:
+  - tuneds
+  - profiles
+  verbs:
+  - watch
+  - get
+  - list
+  - create
+  - update
+  - delete

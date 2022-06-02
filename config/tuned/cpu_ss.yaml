@@ -1,0 +1,17 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: node-tuning-search-space
+data:
+  sysctl.set: |
+    zone_reclaim_mode=0,1,2,4
+  vm.set: |
+    transparent_hugepages=always,never
+  sysctl.int: |
+    vm.swappiness=0,100,10
+    vm.dirty_ratio=0,100,10
+    vm.dirty_background_ratio=0,10,1
+    kernel.sched_min_granularity_ns=1000000,100000000,1000000
+    kernel.sched_wakeup_granularity_ns=1000000,100000000,1000000
+    kernel.sched_migration_cost_ns=1000000,100000000,1000000
+    kernel.sched_latency_ns=1000000,100000000,1000000

@@ -1,0 +1,37 @@
+apiVersion: cpe.cogadvisor.io/v1
+kind: Benchmark
+metadata:
+  name: cpe-benchmark-ext-sample
+  namespace: ray-operator-system
+spec:
+  benchmarkOperator:
+    name: ray
+    namespace: default
+  benchmarkSpec: |
+    template:
+      spec:
+        restartPolicy: Never
+        containers:
+          - securityContext:
+              privileged: true
+            name: ray
+            image: res-cpe-team-docker-local.artifactory.swg-devops.com/cpe/tracker/example-ray-job:latest
+            imagePullPolicy: Always
+            command: [ "/bin/bash", "-c", "--" ]
+            args:
+              - "wget https://raw.githubusercontent.com/ray-project/ray/master/doc/kubernetes/example_scripts/job_example.py &&
+                python job_example.py"
+            resources:
+              requests:
+                cpu: 100m
+                memory: 512Mi
+        imagePullSecrets:
+        - name: res-cpe-team-docker-local
+  trackBuildConfigs:
+  - kind: BuildConfig
+    name: ray-example
+    namespace: default
+  sidecar: false
+  exportDst: 
+  - prometheus
+  - sysdig

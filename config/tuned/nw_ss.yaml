@@ -1,0 +1,25 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: node-tuning-search-space
+data:
+  sysctl.set: |
+    net.ipv4.tcp_rmem=4096 16384 4136960,4096 87380 4194304,4096 87380 16777216,4096 87380 6291456,4096 65536 16777216,8192 873800 16777216,8192 262144 16777216,16384 349520 16777216,20480 12582912 25165824
+    net.ipv4.tcp_wmem=4096 16384 4136960,4096 87380 4194304,4096 87380 16777216,4096 87380 6291456,4096 65536 16777216,8192 873800 16777216,8192 262144 16777216,16384 349520 16777216,20480 12582912 25165824
+    net.ipv4.udp_mem=65536 131072 262144,3145728 4194304 16777216,382020 509362 764040,767787 1023717 1535574
+    net.ipv4.tcp_sack=0,1
+    net.ipv4.tcp_timestamps=0,1
+    net.ipv4.tcp_window_scaling=0,1
+    net.ipv4.tcp_no_metrics_save=0,1
+    net.ipv4.tcp_congestion_control=cubic,htcp
+    net.ipv4.tcp_moderate_rcvbuf=0,1
+    net.ipv4.tcp_low_latency=0,1
+  sysctl.int: |
+    net.ipv4.tcp_fastopen=0,3,1
+    net.core.netdev_max_backlog=1000,250000,2000
+    net.ipv4.tcp_synack_retries=1,10,1
+    net.ipv4.tcp_fin_timeout=1,30,1
+    net.ipv4.tcp_max_orphans=60000,400000,10000
+    net.ipv4.tcp_keepalive_probes=5,10,1
+    net.ipv4.tcp_keepalive_intvl=15,30,5
+    fs.file-max=2000000,10000000,2000000

@@ -1,0 +1,28 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: tpcc-data-load
+spec:
+  template:
+    spec:
+      containers:
+        - name: driver
+          image: res-cpe-team-docker-local.artifactory.swg-devops.com/cockroach/tpcc:latest
+          env:
+          - name: cockroach0
+            value: postgres://root@cockroach-release-cockroachdb-0.cockroach-release-cockroachdb.cockroach-operator-system.svc.cluster.local:26257?sslmode=disable
+          - name: cockroach1
+            value: postgres://root@cockroach-release-cockroachdb-1.cockroach-release-cockroachdb.cockroach-operator-system.svc.cluster.local:26257?sslmode=disable
+          - name: cockroach2
+            value: postgres://root@cockroach-release-cockroachdb-2.cockroach-release-cockroachdb.cockroach-operator-system.svc.cluster.local:26257?sslmode=disable
+          - name: warehouse
+            value: "2500"
+          - name: active_warehouse
+            value: "2500"
+          command: ["/bin/bash", "-c"]
+          args:
+          - /root/tpcc.sh -d 1m -W $warehouse -A $active_warehouse $cockroach0 $cockroach1 $cockroach2 && cat /root/tpcc-results/tpcc-results-${active_warehouse}.txt
+      imagePullSecrets:
+        - name: res-cpe-team-docker-local
+      restartPolicy: Never
+  backoffLimit: 4
