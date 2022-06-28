@@ -143,9 +143,14 @@ CPE operator is a project that originally implements the AutoDECK framework. Aut
     kubectl logs $(kubectl get po -n cpe-operator-system|grep controller|tail -1|awk '{print $1}') -n cpe-operator-system -c manager
     ```
 To remove this operator run 
-> make undeploy
+```bash
+make undeploy
+```
+
 Restart
-> kubectl delete pod $(kubectl get po -n cpe-operator-system|grep controller|tail -1|awk '{print $1}') -n cpe-operator-system
+```bash
+kubectl delete pod $(kubectl get po -n cpe-operator-system|grep controller|tail -1|awk '{print $1}') -n cpe-operator-system
+```
 
 ## Operators and Benchmark
 
