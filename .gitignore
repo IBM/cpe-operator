@@ -27,7 +27,6 @@ testbin
 _all-built-manifests.yaml
 all-built-manifests.yaml
 iteration/node-tuning
-*.txt
 *.log
 transfer.sh
 kubectl
@@ -36,5 +35,3 @@ config-old/
 benchmarks/benchmark_operator/cpe_v1_benchmark_sysbench_*
 benchmarks/benchmark_operator/multi-cluster
 benchmarks/*/note*
-
-hack
