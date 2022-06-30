@@ -48,7 +48,7 @@ CPE operator is a project that originally implements the AutoDECK framework. Aut
 
 1. Clone the repo and enter the workspace
     ```bash
-    git clone https://github.ibm.com/CognitiveAdvisor/cpe-operator.git
+    git clone https://github.com/IBM/cpe-operator.git
     cd cpe-operator
     ```
 
@@ -66,7 +66,7 @@ CPE operator is a project that originally implements the AutoDECK framework. Aut
 
    3.2. Create config secret for accessing COS
    ```yaml
-    # cpe-cos-key.yaml
+    # cpe-cos-key-template.yaml
     apiVersion: v1
     kind: Secret
     metadata:
@@ -87,7 +87,7 @@ CPE operator is a project that originally implements the AutoDECK framework. Aut
     export COS_ID=[instance ID] # crn:v1:...
     export AUTH_ENDPOINT=[authentication endpoint] # https://iam.cloud.ibm.com/identity/token
     export SERVICE_ENDPOINT=[service endpoint] # e.g., s3.jp-tok.cloud-object-storage.appdomain.cloud
-    envsubst < cpe-cos-key.yaml > cpe-cos-key.yaml
+    envsubst < cpe-cos-key-template.yaml > cpe-cos-key.yaml
    ```
 4. Prepare secret folder and update `config/manager/manager.yaml`
 
@@ -109,6 +109,7 @@ CPE operator is a project that originally implements the AutoDECK framework. Aut
     * `.spec.template.spec.imagePullSecrets` = `.metadata.name` of `image-pull-secret.yaml`
 5. Make bundle
     ```bash 
+    go mod tidy
     make bundle
     ```
 6. Build and push operator to your image registry
@@ -117,7 +118,8 @@ CPE operator is a project that originally implements the AutoDECK framework. Aut
     ```
 7. Clone, Build and Push parser to the registry
     ```bash
-    git clone https://github.ibm.com/CognitiveAdvisor/cpe-parser.git
+    git clone https://github.ibm.com/CognitiveAdvisor/cpe-parser.git # internal location
+    # git clone https://github.com/IBM/cpe-operator.git # soon to be provided
     cd cpe-parser
     chmod +x build_push.sh
     # If you want to deploy to different registry, need to set target IMAGE_REGISTRY and VERSION
@@ -143,9 +145,14 @@ CPE operator is a project that originally implements the AutoDECK framework. Aut
     kubectl logs $(kubectl get po -n cpe-operator-system|grep controller|tail -1|awk '{print $1}') -n cpe-operator-system -c manager
     ```
 To remove this operator run 
-> make undeploy
+```bash
+make undeploy
+```
+
 Restart
-> kubectl delete pod $(kubectl get po -n cpe-operator-system|grep controller|tail -1|awk '{print $1}') -n cpe-operator-system
+```bash
+kubectl delete pod $(kubectl get po -n cpe-operator-system|grep controller|tail -1|awk '{print $1}') -n cpe-operator-system
+```
 
 ## Operators and Benchmark
 
@@ -167,7 +174,3 @@ kubectl create -f benchmarks/benchmark_operator/cpe_v1_benchmark_iperf3.yaml
 # confirm the job
 kubectl get po -n my-ripsaw
 ```
-
-
-
-
