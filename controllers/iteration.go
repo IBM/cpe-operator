@@ -23,7 +23,7 @@ import (
 	"strconv"
 	"strings"
 
-	cpev1 "github.ibm.com/CognitiveAdvisor/cpe-operator/api/v1"
+	cpev1 "github.com/IBM/cpe-operator/api/v1"
 )
 
 type IterationKeyType int

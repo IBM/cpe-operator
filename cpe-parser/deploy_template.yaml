@@ -1,0 +1,65 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: cpe-parser
+  namespace: ${PARSER_NAMESPACE}
+  labels:
+    app: web
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: cpe-parser
+  template:
+    metadata:
+      labels:
+        app: cpe-parser
+    spec:
+      containers:
+        - name: cpe-parser
+          env:
+          - name: CPE_COS_LOG_APIKEY
+            valueFrom:
+              secretKeyRef:
+                key: apiKey
+                name: ${COS_SECRET}
+          - name: CPE_COS_LOG_SERVICE_ID
+            valueFrom:
+              secretKeyRef:
+                key: serviceInstanceID
+                name: ${COS_SECRET}
+          - name: CPE_COS_LOG_AUTH_ENDPOINT
+            valueFrom:
+              secretKeyRef:
+                key: authEndpoint
+                name: ${COS_SECRET}
+          - name: CPE_COS_LOG_SERVICE_ENDPOINT
+            valueFrom:
+              secretKeyRef:
+                key: serviceEndpoint
+                name: ${COS_SECRET}
+          - name: CPE_COS_LOG_RAW_BUCKET
+            valueFrom:
+              secretKeyRef:
+                key: rawBucketName
+                name: ${COS_SECRET}
+          - name: PUSHGATEWAY_URL
+            value: http://${PUSHGATEWAY_URL}
+          image: ${IMAGE_REGISTRY}/cpe/parser:v${VERSION}
+          ports:
+            - containerPort: 8080
+      imagePullSecrets:
+      - name: ${PULL_SECRET}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: cpe-parser
+  namespace: ${PARSER_NAMESPACE}
+spec:
+  selector:
+    app: cpe-parser
+  ports:
+  - protocol: TCP
+    port: 80
+    targetPort: 8080

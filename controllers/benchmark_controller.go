@@ -35,7 +35,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 
-	cpev1 "github.ibm.com/CognitiveAdvisor/cpe-operator/api/v1"
+	cpev1 "github.com/IBM/cpe-operator/api/v1"
 )
 
 // BenchmarkReconciler reconciles a Benchmark object

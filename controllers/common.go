@@ -16,8 +16,8 @@ import (
 	"sort"
 	"strings"
 
+	cpev1 "github.com/IBM/cpe-operator/api/v1"
 	"github.com/go-logr/logr"
-	cpev1 "github.ibm.com/CognitiveAdvisor/cpe-operator/api/v1"
 	v1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/meta"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"

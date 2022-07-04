@@ -1,0 +1,2 @@
+vm.dirty_ratio=0,100,10
+vm.dirty_background_ratio=0,50,5

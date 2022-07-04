@@ -1,4 +1,4 @@
-module github.ibm.com/CognitiveAdvisor/cpe-operator
+module github.com/IBM/cpe-operator
 
 go 1.15
 

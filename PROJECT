@@ -5,7 +5,7 @@ plugins:
   manifests.sdk.operatorframework.io/v2: {}
   scorecard.sdk.operatorframework.io/v2: {}
 projectName: cpe-operator
-repo: github.ibm.com/CognitiveAdvisor/cpe-operator
+repo: github.com/IBM/cpe-operator
 resources:
 - api:
     crdVersion: v1
@@ -14,7 +14,7 @@ resources:
   domain: cogadvisor.io
   group: cpe
   kind: Benchmark
-  path: github.ibm.com/CognitiveAdvisor/cpe-operator/api/v1
+  path: github.com/IBM/cpe-operator/api/v1
   version: v1
 - api:
     crdVersion: v1
@@ -23,7 +23,7 @@ resources:
   domain: cogadvisor.io
   group: cpe
   kind: BenchmarkOperator
-  path: github.ibm.com/CognitiveAdvisor/cpe-operator/api/v1
+  path: github.com/IBM/cpe-operator/api/v1
   version: v1
 - api:
     crdVersion: v1
@@ -32,6 +32,6 @@ resources:
   domain: cogadvisor.io
   group: cpe
   kind: EvaluationConfig
-  path: github.ibm.com/CognitiveAdvisor/cpe-operator/api/v1
+  path: github.com/IBM/cpe-operator/api/v1
   version: v1
 version: "3"

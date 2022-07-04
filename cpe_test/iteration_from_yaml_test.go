@@ -16,8 +16,8 @@ import (
 
 	"k8s.io/apimachinery/pkg/runtime/serializer/yaml"
 
-	cpev1 "github.ibm.com/CognitiveAdvisor/cpe-operator/api/v1"
-	"github.ibm.com/CognitiveAdvisor/cpe-operator/controllers"
+	cpev1 "github.com/IBM/cpe-operator/api/v1"
+	"github.com/IBM/cpe-operator/controllers"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 )

@@ -36,8 +36,8 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/healthz"
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
 
-	cpev1 "github.ibm.com/CognitiveAdvisor/cpe-operator/api/v1"
-	"github.ibm.com/CognitiveAdvisor/cpe-operator/controllers"
+	cpev1 "github.com/IBM/cpe-operator/api/v1"
+	"github.com/IBM/cpe-operator/controllers"
 
 	helmclient "github.com/mittwald/go-helm-client"
 	"k8s.io/client-go/kubernetes"

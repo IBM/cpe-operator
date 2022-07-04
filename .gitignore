@@ -26,7 +26,7 @@ bin
 testbin
 _all-built-manifests.yaml
 all-built-manifests.yaml
-iteration/node-tuning
+iteration/node-tuning-test
 *.log
 transfer.sh
 kubectl
