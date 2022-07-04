@@ -12,8 +12,8 @@ import (
 
 	"github.com/stretchr/testify/assert"
 
-	cpev1 "github.ibm.com/CognitiveAdvisor/cpe-operator/api/v1"
-	"github.ibm.com/CognitiveAdvisor/cpe-operator/controllers"
+	cpev1 "github.com/IBM/cpe-operator/api/v1"
+	"github.com/IBM/cpe-operator/controllers"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 )
 

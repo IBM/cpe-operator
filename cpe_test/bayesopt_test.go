@@ -12,8 +12,8 @@ import (
 	"os"
 	"testing"
 
+	"github.com/IBM/cpe-operator/controllers"
 	"github.com/stretchr/testify/assert"
-	"github.ibm.com/CognitiveAdvisor/cpe-operator/controllers"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 
 	"fmt"

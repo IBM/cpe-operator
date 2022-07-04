@@ -118,8 +118,6 @@ CPE operator is a project that originally implements the AutoDECK framework. Aut
     ```
 7. Clone, Build and Push parser to the registry
     ```bash
-    git clone https://github.ibm.com/CognitiveAdvisor/cpe-parser.git # internal location
-    # git clone https://github.com/IBM/cpe-operator.git # soon to be provided
     cd cpe-parser
     chmod +x build_push.sh
     # If you want to deploy to different registry, need to set target IMAGE_REGISTRY and VERSION

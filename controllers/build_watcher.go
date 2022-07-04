@@ -33,7 +33,7 @@ import (
 	"k8s.io/client-go/tools/cache"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
-	cpev1 "github.ibm.com/CognitiveAdvisor/cpe-operator/api/v1"
+	cpev1 "github.com/IBM/cpe-operator/api/v1"
 )
 
 const NO_BUILD_RESOURCE_ERROR = "the server could not find the requested resource"

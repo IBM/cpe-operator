@@ -19,7 +19,7 @@ import (
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
 
-	cpev1 "github.ibm.com/CognitiveAdvisor/cpe-operator/api/v1"
+	cpev1 "github.com/IBM/cpe-operator/api/v1"
 	//+kubebuilder:scaffold:imports
 )
 
