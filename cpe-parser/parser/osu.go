@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: Apache2.0
  */
 
- package parser
+package parser
 
 import (
 	"bufio"

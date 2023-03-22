@@ -188,7 +188,7 @@ func (a *MPIAdaptor) CheckComplete(jobObject map[string]interface{}) bool {
 	for _, condition := range jobConditions {
 		conditionMap := condition.(map[string]interface{})
 		conditionType := conditionMap["reason"].(string)
-		if conditionType == "MPIJobSucceeded" {
+		if strings.Contains(conditionType, "JobSucceeded") {
 			status := conditionMap["status"].(string)
 			if status == "True" {
 				return true
@@ -227,12 +227,64 @@ func (a *MPIAdaptor) GetPodList(jobObject map[string]interface{}, clientset *kub
 	return sublist, err
 }
 
+// Kubeflow Operartor Adaptor
+type KubeflowAdaptor struct {
+	*BaseOperatorAdaptor
+}
+
+func NewKubeflowAdaptor() *KubeflowAdaptor {
+	kubeflowAdaptor := &KubeflowAdaptor{}
+	abs := &BaseOperatorAdaptor{
+		OperatorAdaptor: kubeflowAdaptor,
+	}
+	kubeflowAdaptor.BaseOperatorAdaptor = abs
+	return kubeflowAdaptor
+}
+
+func (a *KubeflowAdaptor) CheckComplete(jobObject map[string]interface{}) bool {
+	jobStatus := jobObject["status"].(map[string]interface{})
+	if jobStatus["conditions"] == nil {
+		return false
+	}
+	jobConditions := jobStatus["conditions"].([]interface{})
+	for _, condition := range jobConditions {
+		conditionMap := condition.(map[string]interface{})
+		conditionType := conditionMap["reason"].(string)
+		if strings.Contains(conditionType, "JobSucceeded") {
+			status := conditionMap["status"].(string)
+			if status == "True" {
+				return true
+			}
+		}
+	}
+	return false
+}
+
+func (a *KubeflowAdaptor) CopyJobResource(originalJob *unstructured.Unstructured) *unstructured.Unstructured {
+	return originalJob.DeepCopy()
+}
+
+func (a *KubeflowAdaptor) GetPodList(jobObject map[string]interface{}, clientset *kubernetes.Clientset) (*corev1.PodList, error) {
+	jobMeta := jobObject["metadata"].(map[string]interface{})
+	jobNamespace := jobMeta["namespace"].(string)
+
+	jobName := jobMeta["name"].(string)
+	listOptions := metav1.ListOptions{
+		LabelSelector: fmt.Sprintf("job-name=%s", jobName),
+		Limit:         100,
+	}
+
+	return clientset.CoreV1().Pods(jobNamespace).List(context.TODO(), listOptions)
+}
+
 var defaultAdaptor OperatorAdaptor = NewDefaultAdaptor()
 var ripsawAdaptor OperatorAdaptor = NewRipsawAdaptor()
 var mpiAdaptor OperatorAdaptor = NewMPIAdaptor()
+var kubeflowAdaptor OperatorAdaptor = NewKubeflowAdaptor()
 
 var OperatorAdaptorMap map[string]OperatorAdaptor = map[string]OperatorAdaptor{
-	"default": defaultAdaptor,
-	"ripsaw":  ripsawAdaptor,
-	"mpi":     mpiAdaptor,
+	"default":  defaultAdaptor,
+	"ripsaw":   ripsawAdaptor,
+	"mpi":      mpiAdaptor,
+	"kubeflow": kubeflowAdaptor,
 }

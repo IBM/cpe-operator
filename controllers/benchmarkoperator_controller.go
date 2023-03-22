@@ -126,8 +126,12 @@ func (r *BenchmarkOperatorReconciler) Reconcile(ctx context.Context, req ctrl.Re
 		host := instance.Spec.CRD.Host
 		pathList := instance.Spec.CRD.Paths
 
+		gvk := GetSimpleJobGVK(instance)
+
 		var rules []rbacv1.PolicyRule
 		var apigroups []string
+		// init with job crd
+		apigroups = append(apigroups, gvk.Group)
 		for _, path := range pathList {
 			yamlURL := host + path
 			r.Log.Info(fmt.Sprintf("Create from yaml %s ", yamlURL))
@@ -155,13 +159,12 @@ func (r *BenchmarkOperatorReconciler) Reconcile(ctx context.Context, req ctrl.Re
 				rules = append(rules, rule)
 			}
 		}
-		// add role for list, get, create, delete job resource
-		gvk := GetSimpleJobGVK(instance)
 
+		// add role for list, get, create, delete job resource
 		jobRule := rbacv1.PolicyRule{
 			APIGroups: []string{gvk.Group},
 			Verbs:     []string{"list", "get", "create", "delete", "watch"},
-			Resources: []string{gvk.Kind},
+			Resources: []string{rbacv1.ResourceAll},
 		}
 		rules = append(rules, jobRule)
 		r.Log.Info(fmt.Sprintf("Create job rule %v: %s,%s", jobRule, gvk.Group, gvk.Kind))
