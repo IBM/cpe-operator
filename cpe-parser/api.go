@@ -17,7 +17,7 @@ import (
 	"github.com/gorilla/mux"
 )
 
-/////////////////////////////////////////////
+// ///////////////////////////////////////////
 // add parser key -> module map here
 var codaitParser parser.Parser = parser.NewCodaitParser()
 var defaultParser parser.Parser = parser.NewDefaultParser()
@@ -30,6 +30,7 @@ var fioParser parser.Parser = parser.NewFioParser()
 var glooParser parser.Parser = parser.NewGlooParser()
 var gromacsParser parser.Parser = parser.NewGromacsParser()
 var linpackParser parser.Parser = parser.NewLinpackParser()
+var timeParser parser.Parser = parser.NewTimeParser()
 
 var parserMap map[string]parser.Parser = map[string]parser.Parser{
 	"codait":   codaitParser,
@@ -43,6 +44,7 @@ var parserMap map[string]parser.Parser = map[string]parser.Parser{
 	"gloo":     glooParser,
 	"gromacs":  gromacsParser,
 	"linpack":  linpackParser,
+	"time":     timeParser,
 }
 
 /////////////////////////////////////////////

@@ -1,0 +1,42 @@
+apiVersion: cpe.cogadvisor.io/v1
+kind: Benchmark
+metadata:
+  name: parsec
+spec:
+  benchmarkOperator:
+    name: none
+    namespace: default
+  benchmarkSpec: |
+    template:
+      spec:
+        containers:
+        - name: parsec
+          image: sunyanan/parsec:v3.0
+          imagePullPolicy: Always
+          env:
+          - name: PACKAGE_ARG
+          - name: INPUT_ARG
+          command:
+          - bash
+          - -c
+          - 'parsecmgmt -a run -p ${PACKAGE_ARG} -i ${INPUT_ARG}'
+        restartPolicy: Never
+    backoffLimit: 4
+  parserKey: time
+  repetition: 5
+  interval: 5
+  iterationSpec:
+    iterations:
+    - name: input
+      location: ".template.spec.containers[0].env[name=INPUT_ARG].value"
+      values:
+      - "native"
+    - name: package
+      location: ".template.spec.containers[0].env[name=PACKAGE_ARG].value"
+      values:
+      - "bodytrack"
+      - "canneal"
+      - "raytrace"
+      - "ferret"
+    sequential: true
+    minimize: true

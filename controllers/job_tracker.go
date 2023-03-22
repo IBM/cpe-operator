@@ -265,17 +265,17 @@ func (r *JobTracker) ProcessJobQueue() {
 
 	podLogOpts := corev1.PodLogOptions{}
 
+	valid := false
 	podList, err := r.Adaptor.GetPodList(jobObject, r.Clientset)
-	valid := true
 	if err != nil {
 		r.Log.Info(fmt.Sprintf("Cannot list pod from selector #%v ", err))
-		valid = false
 	}
 
 	for index, pod := range podList.Items {
 		if pod.Status.Phase != corev1.PodSucceeded {
 			continue
 		}
+		valid = true
 		req := r.Clientset.CoreV1().Pods(jobNamespace).GetLogs(pod.Name, &podLogOpts)
 		podLogs, err := req.Stream(context.TODO())
 		if err != nil {
@@ -308,53 +308,61 @@ func (r *JobTracker) ProcessJobQueue() {
 
 			r.Log.Info(fmt.Sprintf("PutLog: %s: %s", benchmarkName, keyName))
 			logBytes, _ := ioutil.ReadAll(buf)
-			err = putLog(r.Cos, keyName, logBytes)
+			putLogErr := putLog(r.Cos, keyName, logBytes)
 
-			if err != nil {
-				r.Log.Info(fmt.Sprintf("PutLog Error #%v ", err))
-			} else {
-				if parserKey != "" {
-					r.Log.Info(fmt.Sprintf("Job: %s Call Parser: %s", jobName, parserKey))
-					response, err := parseAndPushLog(instance, benchmarkName, jobName, podName, parserKey, constLabels)
-					r.Log.Info(fmt.Sprintf("Response: %v", response))
+			if parserKey != "" {
+				r.Log.Info(fmt.Sprintf("Job: %s Call Parser: %s", jobName, parserKey))
+				var response Response
+				if putLogErr != nil {
+					r.Log.Info(fmt.Sprintf("PutLog Error #%v, parse raw log", err))
+					response, err = parseRawLog(parserKey, logBytes)
+				} else {
+					r.Log.Info(fmt.Sprintf("Parse remote put log"))
+					response, err = parseAndPushLog(instance, benchmarkName, jobName, podName, parserKey, constLabels)
+				}
+				r.Log.Info(fmt.Sprintf("Response: %v", response))
 
-					if index == 0 {
-						// return result to job queue
-						if nodeTunedOptimizer, ok := r.JobOptMap[jobName]; ok {
-							if !nodeTunedOptimizer.FinalizedReady {
-								nodeTunedOptimizer.ResultQueue <- response.PerformanceValue
-							}
-							if bestLogErr == nil && !r.isBetterResult(benchmark, prevValue, response.PerformanceValue) {
-								// if not better, use best response and keep BestPodNameMap as it is
-								r.Log.Info(fmt.Sprintf("Replace with previous result %s (%.2f) -> %s (%.2f)", podName, response.PerformanceValue, bestPodName, prevResponse.PerformanceValue))
-								response = prevResponse
-								podName = bestPodName
-							} else {
-								// else record new best pod
-								r.BestPodNameMap[jobName] = pod.Name
-							}
+				if index == 0 {
+					// return result to job queue
+					if nodeTunedOptimizer, ok := r.JobOptMap[jobName]; ok {
+						if !nodeTunedOptimizer.FinalizedReady {
+							nodeTunedOptimizer.ResultQueue <- response.PerformanceValue
 						}
-
-						if err != nil {
-							r.Log.Info(fmt.Sprintf("ParseAndPushLog Error #%v ", err))
+						if previousExist && bestLogErr == nil && !r.isBetterResult(benchmark, prevValue, response.PerformanceValue) {
+							// if not better, use best response and keep BestPodNameMap as it is
+							r.Log.Info(fmt.Sprintf("Replace with previous result %s (%.2f) -> %s (%.2f)", podName, response.PerformanceValue, bestPodName, prevResponse.PerformanceValue))
+							response = prevResponse
+							podName = bestPodName
 						} else {
-							if nodeTunedOptimizer, ok := r.JobOptMap[jobName]; ok {
-								if nodeTunedOptimizer.FinalizedApplied {
-									r.updateBenchmarkStatus(benchmark, jobName, podName, response)
-									delete(r.BestPodNameMap, jobName)
-								}
-							} else {
+							// else record new best pod
+							r.BestPodNameMap[jobName] = pod.Name
+						}
+					}
+
+					if err != nil {
+						r.Log.Info(fmt.Sprintf("ParseAndPushLog Error #%v ", err))
+					} else {
+						if nodeTunedOptimizer, ok := r.JobOptMap[jobName]; ok {
+							if nodeTunedOptimizer.FinalizedApplied {
 								r.updateBenchmarkStatus(benchmark, jobName, podName, response)
 								delete(r.BestPodNameMap, jobName)
 							}
+						} else {
+							r.updateBenchmarkStatus(benchmark, jobName, podName, response)
+							delete(r.BestPodNameMap, jobName)
 						}
 					}
 				}
 			}
+
 		}
-		r.Clientset.CoreV1().Pods(jobNamespace).Delete(context.TODO(), pod.Name, metav1.DeleteOptions{})
 	}
 	if valid {
+		// delete all pod if got result
+		for _, pod := range podList.Items {
+			r.Clientset.CoreV1().Pods(jobNamespace).Delete(context.TODO(), pod.Name, metav1.DeleteOptions{})
+		}
+
 		// handler tuned profile
 		// try deploy auto-tuned sample queue first
 		nodeSelectionSpec := benchmark.Spec.IterationSpec.NodeSelection
