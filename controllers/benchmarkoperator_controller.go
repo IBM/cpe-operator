@@ -19,6 +19,7 @@ package controllers
 import (
 	"context"
 	"fmt"
+	"os"
 	"reflect"
 
 	"github.com/go-logr/logr"
@@ -38,6 +39,14 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
 	helmclient "github.com/mittwald/go-helm-client"
+)
+
+const (
+	defaultOperatorNamespace = "cpe-operator-system"
+)
+
+var (
+	operatorNamespace string = getOperatorNamespace()
 )
 
 // BenchmarkOperatorReconciler reconciles a BenchmarkOperator object
@@ -97,13 +106,13 @@ func (r *BenchmarkOperatorReconciler) Reconcile(ctx context.Context, req ctrl.Re
 	if is_deleted {
 		if controllerutil.ContainsFinalizer(instance, operatorFinalizer) {
 			if err := r.finalizeBenchmarkOperator(reqLogger, instance); err != nil {
-				return ctrl.Result{}, err
+				return ctrl.Result{}, nil
 			}
 
 			controllerutil.RemoveFinalizer(instance, operatorFinalizer)
 			err := r.Client.Update(ctx, instance)
 			if err != nil {
-				return ctrl.Result{}, err
+				return ctrl.Result{}, nil
 			}
 		}
 		return ctrl.Result{}, nil
@@ -114,7 +123,7 @@ func (r *BenchmarkOperatorReconciler) Reconcile(ctx context.Context, req ctrl.Re
 		controllerutil.AddFinalizer(instance, operatorFinalizer)
 		err = r.Client.Update(ctx, instance)
 		if err != nil {
-			return ctrl.Result{}, err
+			return ctrl.Result{}, nil
 		}
 	} else {
 		// deploy benchmark operator
@@ -349,4 +358,31 @@ func (r *BenchmarkOperatorReconciler) finalizeBenchmarkOperator(reqLogger logr.L
 	}
 	reqLogger.Info(fmt.Sprintf("Finalized %s", instance.ObjectMeta.Name))
 	return nil
+}
+
+func getOperatorNamespace() string {
+	key := "OPERATOR_NAMESPACE"
+	val, found := os.LookupEnv(key)
+	if !found {
+		return defaultOperatorNamespace
+	}
+	return val
+}
+
+func (r *BenchmarkOperatorReconciler) DeployNoneOperator() {
+	noneOperator := &cpev1.BenchmarkOperator{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "none",
+			Namespace: operatorNamespace,
+		},
+		Spec: cpev1.BenchmarkOperatorSpec{
+			APIVersion: "batch/v1",
+			Kind:       "Job",
+			DeploySpec: cpev1.DeploymentSpec{},
+		},
+	}
+	err := r.Create(context.TODO(), noneOperator)
+	if err != nil {
+		r.Log.Info(fmt.Sprintf("Cannot deploy none operator: %v", err))
+	}
 }
