@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: Apache2.0
  */
 
- package common
+package common
 
 import (
 	"fmt"
@@ -111,7 +111,11 @@ func GetGauges(parserKey string, instance string, podName string, values map[str
 				gauges = addStatGauge(parserKey, key, valuesWithLabels.Values, valuesWithLabels.Labels, gauges)
 			}
 		} else if reflect.TypeOf(vals).Kind() == reflect.Slice {
-			gauges = addStatGauge(parserKey, key, vals.([]float64), emptyMap, gauges)
+			if floatVals, ok := vals.([]float64); ok {
+				gauges = addStatGauge(parserKey, key, floatVals, emptyMap, gauges)
+			} else {
+				fmt.Println("Cannot convert slice: ", vals)
+			}
 		} else {
 			fmt.Println("Wrong key type: ", vals)
 		}
@@ -120,17 +124,18 @@ func GetGauges(parserKey string, instance string, podName string, values map[str
 }
 
 func PushValues(parserKey string, clusterID string, instance string, benchmarkName string, jobName string, podName string, const_labels map[string]string, values map[string]interface{}) error {
+	if pushgatewayURL == "" {
+		return fmt.Errorf("No PUSHGATEWAY_URL set")
+	}
 
 	gauges := GetGauges(parserKey, instance, podName, values)
-
 	completionTime := prometheus.NewGauge(prometheus.GaugeOpts{
 		Name: "completion_timestamp_seconds",
 		Help: "The timestamp of the last completion.",
 	})
 	completionTime.SetToCurrentTime()
-	pushgatewayURL := os.Getenv("PUSHGATEWAY_URL")
-	pusher := push.New(pushgatewayURL, jobName)
 
+	pusher := push.New(pushgatewayURL, jobName)
 	for _, gauge := range gauges {
 		pusher.Collector(gauge)
 	}

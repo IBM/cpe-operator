@@ -1,5 +1,8 @@
 FROM golang:1.16
 
+ENV GOOS=linux
+ENV GOARCH=amd64
+
 WORKDIR /go/src/cpe-parser
 COPY parser parser
 COPY common common
@@ -10,5 +13,4 @@ RUN go mod tidy
 RUN go get -d -v ./...
 RUN go install -v ./...
 
-CMD ["cpe-parser"]
-
+CMD ["/go/bin/linux_amd64/cpe-parser"]
