@@ -91,13 +91,13 @@ func (r *BenchmarkReconciler) Reconcile(ctx context.Context, req ctrl.Request) (
 	if is_deleted {
 		if controllerutil.ContainsFinalizer(instance, benchmarkFinalizer) {
 			if err := r.finalizeBenchmark(reqLogger, instance); err != nil {
-				return ctrl.Result{}, err
+				return ctrl.Result{}, nil
 			}
 
 			controllerutil.RemoveFinalizer(instance, benchmarkFinalizer)
 			err := r.Client.Update(ctx, instance)
 			if err != nil {
-				return ctrl.Result{}, err
+				return ctrl.Result{}, nil
 			}
 		}
 		return ctrl.Result{}, nil
@@ -108,7 +108,7 @@ func (r *BenchmarkReconciler) Reconcile(ctx context.Context, req ctrl.Request) (
 		controllerutil.AddFinalizer(instance, benchmarkFinalizer)
 		err = r.Client.Update(ctx, instance)
 		if err != nil {
-			return ctrl.Result{}, err
+			return ctrl.Result{}, nil
 		}
 	} else {
 		r.Log.Info(fmt.Sprintf("Creating #%s ", instance.ObjectMeta.Name))
@@ -121,7 +121,7 @@ func (r *BenchmarkReconciler) Reconcile(ctx context.Context, req ctrl.Request) (
 		err = r.Client.Get(ctx, types.NamespacedName{Name: operatorName, Namespace: operatorNS}, operator)
 		if err != nil {
 			r.Log.Info(fmt.Sprintf("Cannot get #%v ", err))
-			return ctrl.Result{}, err
+			return ctrl.Result{}, nil
 		}
 		var adaptor OperatorAdaptor
 		if _, adaptorExists := OperatorAdaptorMap[operator.Spec.Adaptor]; adaptorExists {

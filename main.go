@@ -162,7 +162,7 @@ func main() {
 
 	_ = helmClient
 
-	if err = (&controllers.BenchmarkOperatorReconciler{
+	benchmarkOperator := &controllers.BenchmarkOperatorReconciler{
 		Clientset:  clientset,
 		Client:     mgr.GetClient(),
 		Log:        ctrl.Log.WithName("controllers").WithName("BenchmarkOperator"),
@@ -170,10 +170,13 @@ func main() {
 		DC:         dc,
 		DYN:        dyn,
 		HelmClient: helmClient,
-	}).SetupWithManager(mgr); err != nil {
+	}
+
+	if err = (benchmarkOperator).SetupWithManager(mgr); err != nil {
 		setupLog.Error(err, "unable to create controller", "controller", "BenchmarkOperator")
 		os.Exit(1)
 	}
+	benchmarkOperator.DeployNoneOperator()
 
 	buildQueue := make(chan *unstructured.Unstructured, BUILD_MAX_QSIZE)
 	defer close(buildQueue)
@@ -192,6 +195,8 @@ func main() {
 	if err == nil {
 		go buildWatcher.Run()
 	}
+
+	controllers.NewCollector(mgr.GetClient(), ctrl.Log.WithName("controllers").WithName("ResultCollector"))
 
 	//+kubebuilder:scaffold:builder
 

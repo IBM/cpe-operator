@@ -257,7 +257,9 @@ func (it *IterationHandler) UpdateValue(baseObject map[string]interface{}, locat
 
 	var modifiedObject map[string]interface{}
 	for index, locationSplits := range locationSplitsArr {
-		modifiedObject = it.updateNextValue(baseObject, locationSplits, 0, values[index])
+		if index < len(values) {
+			modifiedObject = it.updateNextValue(baseObject, locationSplits, 0, values[index])
+		}
 	}
 	return modifiedObject
 }

@@ -4,8 +4,8 @@
  */
 
 // Package v1 contains API Schema definitions for the cpe v1 API group
-//+kubebuilder:object:generate=true
-//+groupName=cpe.cogadvisor.io
+// +kubebuilder:object:generate=true
+// +groupName=cpe.cogadvisor.io
 package v1
 
 import (
