@@ -29,7 +29,7 @@ endif
 BUNDLE_METADATA_OPTS ?= $(BUNDLE_CHANNELS) $(BUNDLE_DEFAULT_CHANNEL)
 
 
-export IMAGE_REGISTRY ?= res-cpe-team-docker-local.artifactory.swg-devops.com
+export IMAGE_REGISTRY ?= <your-repo>
 # IMAGE_TAG_BASE defines the docker.io namespace and part of the image name for remote images.
 # This variable is used to construct full image tags for bundle and catalog images.
 #
@@ -45,6 +45,7 @@ BUNDLE_IMG ?= $(IMAGE_REGISTRY)/$(IMAGE_TAG_BASE)-bundle:v$(VERSION)
 # Image URL to use all building/pushing image targets
 # IMG ?= controller:latest
 IMG ?= $(IMAGE_REGISTRY)/$(IMAGE_TAG_BASE)-controller:v$(VERSION)
+PARSER_IMG ?= $(IMAGE_REGISTRY)/cpe/parser:v$(VERSION)
 
 # Produce CRDs that work back to Kubernetes 1.11 (no version conversion)
 CRD_OPTIONS ?= "crd:trivialVersions=true,preserveUnknownFields=false"
@@ -132,6 +133,11 @@ deploy: update-env manifests kustomize ## Deploy controller to the K8s cluster s
 	cd config/manager && $(KUSTOMIZE) edit set image controller=${IMG}
 	$(KUSTOMIZE) build config/default | kubectl apply -f -
 
+yaml: update-env manifests kustomize
+	cd config/manager && $(KUSTOMIZE) edit set image controller=${IMG}
+	$(KUSTOMIZE) build config/default > deploy/simple-deploy.yaml
+
+
 undeploy: ## Undeploy controller from the K8s cluster specified in ~/.kube/config.
 	$(KUSTOMIZE) build config/default | kubectl delete -f -
 	
@@ -213,3 +219,11 @@ catalog-build: opm ## Build a catalog image.
 .PHONY: catalog-push
 catalog-push: ## Push a catalog image.
 	$(MAKE) docker-push IMG=$(CATALOG_IMG)
+
+
+##@ Parser
+parser-docker-build: ## Build docker image for parser
+	docker build -t ${PARSER_IMG} -f ./cpe-parser/Dockerfile ./cpe-parser 
+
+parser-docker-push: ## Push docker image for parser
+	docker push ${PARSER_IMG}

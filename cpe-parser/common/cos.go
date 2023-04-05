@@ -3,11 +3,12 @@
  * SPDX-License-Identifier: Apache2.0
  */
 
- package common
+package common
 
 import (
 	"bytes"
 	"context"
+	"fmt"
 	"io/ioutil"
 	"os"
 
@@ -40,6 +41,9 @@ func NewCOS() *COSObject {
 }
 
 func PutLog(c *COSObject, keyName string, podLogs []byte) error {
+	if c.ServiceEndpoint == "" {
+		return fmt.Errorf("No ServiceEndpoint set")
+	}
 
 	reader := bytes.NewReader(podLogs)
 	ctx := context.Background()
@@ -69,6 +73,9 @@ func PutLog(c *COSObject, keyName string, podLogs []byte) error {
 }
 
 func GetLog(c *COSObject, keyName string) (b []byte, err error) {
+	if c.ServiceEndpoint == "" {
+		return nil, fmt.Errorf("No ServiceEndpoint set")
+	}
 
 	bucketName := c.RawBucketName
 
