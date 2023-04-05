@@ -35,6 +35,11 @@ type LogSpec struct {
 	ConstLabels   map[string]string `json:"labels"`
 }
 
+type RawLog struct {
+	Parser   string `json:"parser"`
+	LogValue []byte `json:"log"`
+}
+
 type Response struct {
 	Status           string  `json:"status"`
 	Message          string  `json:"msg"`
@@ -44,11 +49,13 @@ type Response struct {
 
 var PUSH_URL string = os.Getenv("PARSER_SERVICE") + "/push"
 var PARSE_URL string = os.Getenv("PARSER_SERVICE") + "/parse"
+var PARSE_RAW_URL string = os.Getenv("PARSER_SERVICE") + "/raw-parse"
 
 const (
 	reqHeader = "application/json; charset=utf-8"
 )
 
+// parseLog: parse remote log on COS only
 func parseLog(benchmarkName string, jobName string, podName string, parser string) (Response, error) {
 
 	logSpec := LogSpec{
@@ -79,8 +86,8 @@ func parseLog(benchmarkName string, jobName string, podName string, parser strin
 	}
 }
 
+// parseAndPushLog: parse remote log on COS and push to pushgateway
 func parseAndPushLog(instance string, benchmarkName string, jobName string, podName string, parser string, constLabels map[string]string) (Response, error) {
-
 	logSpec := LogSpec{
 		CLUSTER_ID,
 		instance,
@@ -96,6 +103,31 @@ func parseAndPushLog(instance string, benchmarkName string, jobName string, podN
 		return Response{}, err
 	} else {
 		res, err := http.Post(PUSH_URL, reqHeader, bytes.NewBuffer(jsonReq))
+		if err != nil {
+			return Response{}, err
+		}
+		body, err := ioutil.ReadAll(res.Body)
+		if err != nil {
+			return Response{}, err
+		}
+		var response Response
+		json.Unmarshal(body, &response)
+		return response, err
+	}
+}
+
+// parseRawLog: parse raw log
+func parseRawLog(parser string, logValue []byte) (Response, error) {
+	rawLog := RawLog{
+		parser,
+		logValue,
+	}
+
+	jsonReq, err := json.Marshal(rawLog)
+	if err != nil {
+		return Response{}, err
+	} else {
+		res, err := http.Post(PARSE_RAW_URL, reqHeader, bytes.NewBuffer(jsonReq))
 		if err != nil {
 			return Response{}, err
 		}

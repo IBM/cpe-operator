@@ -249,6 +249,8 @@ spec:
                         properties:
                           job:
                             type: string
+                          parseResult:
+                            type: string
                           performanceKey:
                             type: string
                           performanceValue:
@@ -261,6 +263,7 @@ spec:
                             type: string
                         required:
                         - job
+                        - parseResult
                         - performanceKey
                         - performanceValue
                         - pod

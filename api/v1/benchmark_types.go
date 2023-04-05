@@ -65,6 +65,7 @@ type BenchmarkResultItem struct {
 	PodName          string `json:"pod"`
 	PerformanceKey   string `json:"performanceKey"`
 	PerformanceValue string `json:"performanceValue"`
+	Result           string `json:"parseResult"`
 	PushedTime       string `json:"pushedTime"`
 }
 

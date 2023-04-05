@@ -395,6 +395,7 @@ func (r *JobTracker) updateBenchmarkStatus(benchmark *cpev1.Benchmark, jobName s
 		Repetition:       repetition,
 		PerformanceKey:   performanceKey,
 		PerformanceValue: pvalInString,
+		Result:           response.Message,
 		JobName:          jobName,
 		PodName:          podName,
 		PushedTime:       pushedTime,
