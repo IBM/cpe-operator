@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: Apache2.0
  */
 
- package main
+package main
 
 import (
 	"encoding/json"
@@ -31,6 +31,7 @@ var glooParser parser.Parser = parser.NewGlooParser()
 var gromacsParser parser.Parser = parser.NewGromacsParser()
 var linpackParser parser.Parser = parser.NewLinpackParser()
 var timeParser parser.Parser = parser.NewTimeParser()
+var stressParser parser.Parser = parser.NewStressParser()
 
 var parserMap map[string]parser.Parser = map[string]parser.Parser{
 	"codait":   codaitParser,
@@ -45,6 +46,7 @@ var parserMap map[string]parser.Parser = map[string]parser.Parser{
 	"gromacs":  gromacsParser,
 	"linpack":  linpackParser,
 	"time":     timeParser,
+	"stress":   stressParser,
 }
 
 /////////////////////////////////////////////
@@ -59,6 +61,11 @@ type LogSpec struct {
 	ConstLabels   map[string]string `json:"labels"`
 }
 
+type RawLog struct {
+	Parser   string `json:"parser"`
+	LogValue []byte `json:"log"`
+}
+
 type Response struct {
 	Status           string  `json:"status"`
 	Message          string  `json:"msg"`
@@ -71,6 +78,13 @@ func getLogSpec(r *http.Request) (LogSpec, error) {
 	var logSpec LogSpec
 	err := json.Unmarshal(reqBody, &logSpec)
 	return logSpec, err
+}
+
+func getRawLog(r *http.Request) (RawLog, error) {
+	reqBody, _ := ioutil.ReadAll(r.Body)
+	var rawLog RawLog
+	err := json.Unmarshal(reqBody, &rawLog)
+	return rawLog, err
 }
 
 func getLogFromSpec(logSpec LogSpec) ([]byte, error) {
@@ -185,10 +199,37 @@ func ReqPushLog(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(res)
 }
 
+func ReqRawParse(w http.ResponseWriter, r *http.Request) {
+	var msg string
+	var status string
+	pkey := ""
+	pval := -1.0
+	rawLog, err := getRawLog(r)
+	if err != nil {
+		status = "ERROR"
+		msg = fmt.Sprintf("%v", err)
+	} else {
+		ppkey, ppval, values, err := parseValue(rawLog.Parser, rawLog.LogValue)
+		if err != nil {
+			status = "ERROR"
+			msg = fmt.Sprintf("%v", err)
+		} else {
+			status = "OK"
+			dataBytes, _ := json.Marshal(values)
+			msg = string(dataBytes)
+			pkey = ppkey
+			pval = ppval
+		}
+	}
+	res := Response{status, msg, pkey, pval}
+	json.NewEncoder(w).Encode(res)
+}
+
 func GetRouter() *mux.Router {
 	router := mux.NewRouter().StrictSlash(true)
 	router.HandleFunc("/log", ReqLog).Methods("POST")
 	router.HandleFunc("/parse", ReqParsedValue).Methods("POST")
 	router.HandleFunc("/push", ReqPushLog).Methods("POST")
+	router.HandleFunc("/raw-parse", ReqRawParse).Methods("POST")
 	return router
 }
