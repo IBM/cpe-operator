@@ -1,24 +1,19 @@
 # Benchmark Output Handling
 ```
-┌─────────────────────────────────────────────────────────┐ 
-|                      CPE Operator                       |
-|  ┌──────────────────────╮   ┌─────────────╮   ┌───────╮ |   ┏━━━━━━━━━━┓
-|  │ benchmark_controller ├─ >┤ job_tracker |──>|  cos  |─── >┃   COS    ┃
-|  └──────────────────────┘   └──────┬──────┘   └───────┘ |   ┗━━━━┬━━━━━┛
-|                                    V                    |        |
-|                             ┌─────────────╮             |        |
-|                             |    parser   |             |        |
-|                             └──────┬──────┘             |        |
-└────────────────────────────────────|────────────────────┘        |                       
-                                     V                             |
-                              ┏━━━━━━━━━━━━┓                       |
-                              ┃ CPE Parser ┃<──────────────────────┘
-                              ┗━━━━━━┬━━━━━┛
-                                     |
-                                     V 
-                           ┏━━━━━━━━━━━━━━━━━┓    ┏━━━━━━━━━━━━━━━━━━━┓   ┏━━━━━━━━━┓ 
-                           ┃   PushGateway   |───>| Prometheus Server |──>┃ Grafana ┃
-                           ┗━━━━━━━━━━━━━━━━━┛    ┗━━━━━━━━━━━━━━━━━━━┛   ┗━━━━━━━━━┛
+┌────────────────────────────────────────────────┐ 
+|                 CPE System                     |
+|  ┌──────────────────────╮   ┌─────────────╮    |   ┏━━━━━━━━━━┓
+|  │ benchmark_controller ├─ >┤ job_tracker |────── >┃   COS    ┃
+|  └──────────────────────┘   └──────┬──────┘    |   ┗━━━━━━━━━━┛ 
+|                                    V           |  
+|                             ┏━━━━━━━━━━━━┓     |  
+|                             ┃ CPE Parser ┃     |  
+|                             ┗━━━━━━┬━━━━━┛     |  
+|                                    V           |  
+|                          ┌─────────────────╮   |  ┏━━━━━━━━━━━━━━━━━━━┓ 
+|                          |    collector    |─────>┃ Prometheus Server ┃
+|                          └─────────────────┘   |  ┗━━━━━━━━━━━━━━━━━━━┛
+└────────────────────────────────────-───────────┘ 
 ```
 
 This module is implemented in [job_tracker.go](../controllers/job_tracker.go)
@@ -88,52 +83,62 @@ spec:
 
 ## Raw Output Collection
 ```
-┌─────────────────────────────────────────────────────────┐ 
-|                      CPE Operator                       |
-|  ┌──────────────────────╮   ┌─────────────╮   ┌───────╮ |   ┏━━━━━━━━━━┓
-|  │ benchmark_controller ├─ >┤ job_tracker |──>|  cos  |─── >┃   COS    ┃
-|  └──────────────────────┘   └─────────────┘   └───────┘ |   ┗━━━━━━━━━━┛
-└─────────────────────────────────────────────────────────┘                              
+┌──────────────────────────────────────────────┐ 
+|                      CPE System              |
+|  ┌──────────────────────╮   ┌─────────────╮  |   ┏━━━━━━━━━━┓
+|  │ benchmark_controller ├─ >┤ job_tracker |──── >┃   COS    ┃
+|  └──────────────────────┘   └─────────────┘  |   ┗━━━━━━━━━━┛
+└──────────────────────────────────────────────┘                              
 ```
 
 1. Prepare cloud object storage bucket for raw output
 2. Create secret yaml file to specify the prepared bucketname and secret key to connect to IBM Cloud Object Storage
-    ```yaml
+    
+    2.1. create a template file
+
+   ```yaml
+    # cpe-cos-key-template.yaml
     apiVersion: v1
     kind: Secret
     metadata:
       name: cpe-cos-key
     type: Opaque
     stringData:
-      rawBucketName: ""
-      apiKey: ""
-      serviceInstanceID: ""
-      authEndpoint: ""
-      serviceEndpoint: ""
-    ```
-2. Confirm the name in environment variables of [manager container](../config/manager/manager.yaml)
-3. After the job is completed, log will be collected with this object key format: `[benchmarkName]/[jobName]/[podName].log` 
+      rawBucketName: ${BUCKET_NAME}
+      apiKey: ${APIKEY}
+      serviceInstanceID: "${COS_ID}"
+      authEndpoint: ${AUTH_ENDPOINT}
+      serviceEndpoint: ${SERVICE_ENDPOINT}
+   ```
+
+   2.2. Update the value to `cpe-cos-key.yaml` with envsubst
+   ```bash
+    export BUCKET_NAME=[your bucket to store log]
+    export APIKEY=[api key]
+    export COS_ID=[instance ID] # crn:v1:...
+    export AUTH_ENDPOINT=[authentication endpoint] # https://iam.cloud.ibm.com/identity/token
+    export SERVICE_ENDPOINT=[service endpoint] # e.g., s3.jp-tok.cloud-object-storage.appdomain.cloud
+    envsubst < cpe-cos-key-template.yaml > cpe-cos-key.yaml
+   ```
+
+3. Modify kustomization for [default](../config/default/kustomization.yaml) (manager) and [parser](../config/parser/kustomization.yaml) by uncommenting lines of section `[LOG-COS]`.
+
+4. After the job is completed, log will be collected with this object key format: `[benchmarkName]/[jobName]/[podName].log` 
 
 ## Parsed Output Visualization
 ```
-┌─────────────────────────────────────────────────────────┐ 
-|                      CPE Operator                       |
-|  ┌──────────────────────╮   ┌─────────────╮             |   ┏━━━━━━━━━━┓
-|  │ benchmark_controller ├─ >┤ job_tracker |             |   ┃   COS    ┃
-|  └──────────────────────┘   └──────┬──────┘             |   ┗━━━━┬━━━━━┛
-|                                    V                    |        |
-|                             ┌─────────────╮             |        |
-|                             |    parser   |             |        |
-|                             └──────┬──────┘             |        |
-└────────────────────────────────────|────────────────────┘        |                       
-                                     V                             |
-                              ┏━━━━━━━━━━━━┓                       |
-                              ┃ CPE Parser ┃<──────────────────────┘
-                              ┗━━━━━━┬━━━━━┛
-                                     |
-                                     V 
-                           ┏━━━━━━━━━━━━━━━━━┓    ┏━━━━━━━━━━━━━━━━━━━┓   ┏━━━━━━━━━┓ 
-                           ┃   PushGateway   |───>| Prometheus Server |──>┃ Grafana ┃
-                           ┗━━━━━━━━━━━━━━━━━┛    ┗━━━━━━━━━━━━━━━━━━━┛   ┗━━━━━━━━━┛
+┌────────────────────────────────────────────────┐ 
+|                 CPE System                     |
+|  ┌──────────────────────╮   ┌─────────────╮    |  
+|  │ benchmark_controller ├─ >┤ job_tracker |    |  
+|  └──────────────────────┘   └──────┬──────┘    |  
+|                                    V           |  
+|                             ┏━━━━━━━━━━━━┓     |  
+|                             ┃ CPE Parser ┃     |  
+|                             ┗━━━━━━┬━━━━━┛     |  
+|                                    V           |  
+|                          ┌─────────────────╮   |  ┏━━━━━━━━━━━━━━━━━━━┓ 
+|                          |    collector    |─────>┃ Prometheus Server ┃
+|                          └─────────────────┘   |  ┗━━━━━━━━━━━━━━━━━━━┛
+└────────────────────────────────────-───────────┘ 
 ```
-CPE Parser is implemented in https://github.ibm.com/CognitiveAdvisor/cpe-parser

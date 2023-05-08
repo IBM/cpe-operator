@@ -1,0 +1,28 @@
+apiVersion: cpe.cogadvisor.io/v1
+kind: Benchmark
+metadata:
+  name: sysbench
+  namespace: my-ripsaw
+spec:
+  benchmarkOperator:
+    name: ripsaw
+    namespace: default
+  benchmarkSpec: |
+    workload:
+      name: sysbench
+      args:
+        enabled: true
+        tests:
+        - name: cpu
+          parameters:
+            cpu-max-prime: {{ .maxprime }}
+        - name: fileio
+          parameters:
+            file-test-mode: rndrw
+  parserKey: sysbench
+  iterationSpec:
+    iterations:
+    - name: maxprime
+      values:
+      - "3000"
+    sequential: true

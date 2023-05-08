@@ -1,0 +1,19 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: test
+  namespace: default
+spec:
+  template:
+    spec:
+      resources:
+        limits:
+          cpu: 500m
+      containers:
+        - name: coremark
+          image: 
+          command:
+          - sh
+          - -c
+          - ./coremark-1thread.exe
+      restartPolicy: Never

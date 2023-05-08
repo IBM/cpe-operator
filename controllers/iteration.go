@@ -265,7 +265,6 @@ func (it *IterationHandler) UpdateValue(baseObject map[string]interface{}, locat
 }
 
 // Get All Combination
-
 func (it *IterationHandler) nextCombination(itr []cpev1.IterationItem, curLayer int, prevList []map[string]string) []map[string]string {
 	if curLayer == len(itr) {
 		return prevList
@@ -316,35 +315,6 @@ func (it *IterationHandler) deeperValue(object map[string]interface{}, keys []st
 	return object[keyName]
 }
 
-func (it *IterationHandler) GetInitCombination(initObject map[string]interface{}, itr []cpev1.IterationItem) map[string]string {
-	initCombination := make(map[string]string)
-	for _, item := range itr {
-		if item.Name == NODESELECT_ITR_NAME {
-			tunedValue := it.GetValue(initObject, item.Location)
-			if tunedValue == nil {
-				initCombination[item.Name] = NODESELECT_ITR_DEFAULT
-			} else {
-				initCombination[item.Name] = tunedValue[0]
-			}
-			continue
-		}
-		// locationSplits := strings.Split(item.Location[1:], ".")
-		locationSplitsArr := it.getTokens(item.Location)
-		composedValue := ""
-		for _, locationSplits := range locationSplitsArr {
-			value := it.deeperValue(initObject, locationSplits, 0)
-			if value == NULL_VALUE_STR { // cannot find
-				return nil
-			}
-			composedValue = fmt.Sprintf("%s;%v", composedValue, value)
-		}
-		if len(locationSplitsArr) > 0 {
-			initCombination[item.Name] = composedValue[1:]
-		}
-	}
-	return initCombination
-}
-
 func (it *IterationHandler) GetValue(initObject map[string]interface{}, location string) []string {
 	// locationSplits := strings.Split(location[1:], ".")
 	locationSplitsArr := it.getTokens(location)
@@ -357,61 +327,4 @@ func (it *IterationHandler) GetValue(initObject map[string]interface{}, location
 		values = append(values, fmt.Sprintf("%v", value))
 	}
 	return values
-}
-
-func (it *IterationHandler) GetInitAndAllCombination(initObject map[string]interface{}, itr []cpev1.IterationItem) []map[string]string {
-	initCombination := it.GetInitCombination(initObject, itr)
-	if initCombination != nil {
-		var newIteration []cpev1.IterationItem
-		// add init iteration
-		for _, item := range itr {
-			if initValue, ok := initCombination[item.Name]; ok {
-				found := false
-				for _, existValue := range item.Values {
-					if existValue == initValue {
-						found = true
-						break
-					}
-				}
-				if !found {
-					copiedItem := cpev1.IterationItem{
-						Name:     item.Name,
-						Location: item.Location,
-						Values:   append(item.Values, initValue),
-					}
-					newIteration = append(newIteration, copiedItem)
-				} else {
-					newIteration = append(newIteration, item)
-				}
-			} else {
-				if len(item.Values) == 0 {
-					copiedItem := cpev1.IterationItem{
-						Name:     item.Name,
-						Location: item.Location,
-						Values:   []string{NULL_VALUE_STR},
-					}
-					newIteration = append(newIteration, copiedItem)
-				} else {
-					newIteration = append(newIteration, item)
-				}
-			}
-		}
-		return it.GetAllCombination(newIteration)
-	} else {
-		var newIteration []cpev1.IterationItem
-		// add none if no values and no init
-		for _, item := range itr {
-			if len(item.Values) == 0 {
-				copiedItem := cpev1.IterationItem{
-					Name:     item.Name,
-					Location: item.Location,
-					Values:   []string{NULL_VALUE_STR},
-				}
-				newIteration = append(newIteration, copiedItem)
-			} else {
-				newIteration = append(newIteration, item)
-			}
-		}
-		return it.GetAllCombination(newIteration)
-	}
 }

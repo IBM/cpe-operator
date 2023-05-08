@@ -1,3 +1,8 @@
+/*
+ * Copyright 2022- IBM Inc. All rights reserved
+ * SPDX-License-Identifier: Apache2.0
+ */
+
 package controllers
 
 import (
@@ -169,6 +174,7 @@ func (c *ResultCollector) Collect(ch chan<- prometheus.Metric) {
 	c.Client.List(context.TODO(), benchmarks, &client.ListOptions{
 		Namespace: metav1.NamespaceAll,
 	})
+	c.resultVectors.Reset()
 	for _, benchmark := range benchmarks.Items {
 		benchmarkName := benchmark.Name
 		for _, result := range benchmark.Status.Results {

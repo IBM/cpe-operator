@@ -1,0 +1,41 @@
+apiVersion: cpe.cogadvisor.io/v1
+kind: Benchmark
+metadata:
+  name: stressng
+spec:
+  benchmarkOperator:
+    name: none
+    namespace: default
+  benchmarkSpec: |
+    template:
+      spec:
+        containers:
+        - name: stress
+          image: alexeiled/stress-ng
+          imagePullPolicy: IfNotPresent
+          env:
+          - name: TIMEOUT
+            value: 60s
+          - name: STRESSOR
+            value: {{ index .stressor 0 }}
+          - name: STRESS_LOAD
+            value: "{{ index .stressor 1 }}"
+          command:
+          - /stress-ng
+          - --$(STRESSOR)
+          - $(STRESS_LOAD)
+          - --timeout
+          - $(TIMEOUT)
+          - --metrics-brief
+        restartPolicy: Never
+  parserKey: stress
+  repetition: 1
+  interval: 5
+  iterationSpec:
+    iterations:
+    - name: stressor
+      values:
+      - "cpu;4"
+      - "io;4"
+      - "memcpy;4"
+    sequential: true

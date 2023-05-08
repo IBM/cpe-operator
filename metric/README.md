@@ -19,15 +19,7 @@
 
     helm install -n cpe-monitoring-system prometheus stable/prometheus-operator
    ```
-3. Deploy PushGateway
-    ```bash
-    helm install -n cpe-monitoring-system pushgateway stable/prometheus-pushgateway
-    # Deploy service monitor
-    kubectl create -f servicemonitor/pushgateway-helm.yaml
-    # Check pushgateway service name and port
-    kubectl get svc -n cpe-monitoring-system
-    ```
-4. Deploy Service Monitor (and certificate if need)
+3. Deploy Service Monitor (and certificate if need)
    - For openshift, we may copy service monitor from original openshift-monitoring namespace
      ```bash
      kubectl get cm -n openshift-monitoring kubelet-serving-ca-bundle -o yaml --export|kubectl create -f -
@@ -38,7 +30,7 @@
      ```
    - For helm chart installation, node exporter as well as kubelet service monitor are already placed
    - Relabel ServiceMonitor: [check here](#metric-exporters)
-5. [for Thanos Sidecar] Deploy COS Storage config for thanos forwarding: [see more](https://thanos.io/tip/thanos/storage.md/)
+4. [for Thanos Sidecar] Deploy COS Storage config for thanos forwarding: [see more](https://thanos.io/tip/thanos/storage.md/)
     ```bash
     # S3-based example
     export BUCKET_NAME=[your bucket to store log/metrics]
@@ -48,7 +40,7 @@
     export SECRET_KEY=[secret key]
     envsubst < thanos/thanos-storage-config.yaml | kubectl apply -f -
     ```
-6. [for Thanos Sidecar] Deploy Prometheus with Thanos Sidecar saving to COS
+5. [for Thanos Sidecar] Deploy Prometheus with Thanos Sidecar saving to COS
    - For openshift, we need to create new prometheus resource
         ```bash
         export CLUSTER_ID=`kubectl config current-context | awk -F"/" '{ print $1 }'`
@@ -69,15 +61,15 @@
         kubectl create -f prometheus/cluster-monitoring-view-adv.yaml
         kubectl create -f prometheus/cr-binding.yaml
         ```
-7. [For Thanos Query] Deploy Thanos Store Gateway
+6. [For Thanos Query] Deploy Thanos Store Gateway
    ```bash
    kubectl create -f store/
    ```
-8. [For Thanos Query] Deploy Thanos Query
+7. [For Thanos Query] Deploy Thanos Query
     ```bash
     kubectl create -f thanos/thanos-query.yaml
     ```
-9. [For Grafana] Deploy Grafana
+8. [For Grafana] Deploy Grafana
     - For Openshift, we need to create new grafana resoruce 
         ```bash
         export GRAFANA_NAMESPACE=cpe-monitoring-system

@@ -1,0 +1,25 @@
+apiVersion: cpe.cogadvisor.io/v1
+kind: Benchmark
+metadata:
+  name: coremark
+  namespace: default
+spec:
+  benchmarkOperator:
+    name: none
+    namespace: cpe-operator-system
+  benchmarkSpec: |
+    backoffLimit: 0
+    template:
+      spec:
+        resources:
+          limits:
+            cpu: 500m
+        containers:
+          - name: coremark
+            image: 
+            command:
+            - sh
+            - -c
+            - ./coremark-1thread.exe
+        restartPolicy: Never
+  parserKey: coremark

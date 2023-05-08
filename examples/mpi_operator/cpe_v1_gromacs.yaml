@@ -1,0 +1,64 @@
+apiVersion: cpe.cogadvisor.io/v1
+kind: Benchmark
+metadata:
+  name: gromacs
+  namespace: default
+spec:
+  benchmarkOperator:
+    name: mpi
+    namespace: default
+  benchmarkSpec: |
+    slotsPerWorker: 1
+    cleanPodPolicy: Running
+    mpiReplicaSpecs:
+      Launcher:
+        replicas: 1
+        template:
+          spec:
+            containers:
+            - image: res-cpe-team-docker-local.artifactory.swg-devops.com/benchmark/gromacs:v1
+              name: mpi-bench-master
+              imagePullPolicy: Always
+              command:
+              - mpirun
+              - --allow-run-as-root
+              - -np
+              - {{ .np }}
+              - /usr/local/gromacs/bin/mdrun_mpi
+              - -s
+              - {{ .dataset }}/benchmark.tpr
+              - -ntomp
+              - {{ .ntomp }}
+            nodeSelector:
+              ibm-cloud.kubernetes.io/worker-pool-name: cpe
+            imagePullSecrets:
+            - name: res-cpe-team-docker-local
+      Worker:
+        replicas: 1
+        template:
+          metadata:
+            labels:
+              app: mpiworker
+          spec:
+            containers:
+            - image: res-cpe-team-docker-local.artifactory.swg-devops.com/benchmark/gromacs:v1
+              name: mpi-bench-worker
+              imagePullPolicy: Always
+            nodeSelector:
+              ibm-cloud.kubernetes.io/worker-pool-name: cpe
+            imagePullSecrets:
+            - name: res-cpe-team-docker-local
+  iterationSpec:
+    sequential: true
+    configurations:
+      - name: dataset
+        values:
+        - "20k-atoms"
+    iterations:
+      - name: np
+        values:
+        - "1"
+      - name: ntomp
+        values:
+        - "4"
+  parserKey: gromacs

@@ -13,12 +13,10 @@ spec:
     iterationSpec:
         iterations:
         - name: [variable name]
-            location: [varaible location in BenchmarkSpec]
             values:
             - [list of values]
         configurations:
         - name: [variable name]
-            location: [varaible location in BenchmarkSpec]
             values:
             - [list of values] 
         nodeSelection:
@@ -41,23 +39,18 @@ When Benchmark Controller calls [CreateFromOperator](../controllers/common.go),
   ```bash
   [benchmark name]-cpeh-[hash32 of <iterations, build, repetition>]
   ```
-- If the location contains delimit characters '.', you need to cover by parenthesis for example, `.template.spec.nodeSelector.(ibm-cloud.kubernetes.io/zone)`.
+- Each item in `values` will be used to replace in the benchmarkSpec using [Go Template](https://pkg.go.dev/text/template). 
+- For auto-tuning node, the location in `nodeSelection` key is used to specifiy the key location of the target node selector with dotted notation.
 - The iteration item will be also labeled to the job. 
 - These labels will be sent to Parser component as a `constLabels` attribute.
-- `constLabels` will be later pushed as a label to prometheus PushGateway, see [output](../output/README.md) for more detail.
+- `constLabels` will be later pushed as a label to prometheus, see [output](../output/README.md) for more detail.
 - `sequential` is to indicate whether the iterated job should run at the same time in parallel or sequentially
 - `minimize` is to specify that lower number of performance value is better (default, higher is better)
 - `nodeSelection` key is considered as special configuration with the iteration name `profile`
 
 ### Composite Iteration 
-Composite iteration referes to iteration value that is composed of more than two locations and values.
-For example, to set nodeSelector zone of launcher and worker on mpi latency benchmark to the same zone for each iteration. We support by processing the delimit ';' in `location` and `values` attributes
-```yaml
-      location: ".mpiReplicaSpecs.Launcher.template.spec.nodeSelector.(ibm-cloud.kubernetes.io/zone);.mpiReplicaSpecs.Worker.template.spec.nodeSelector.(ibm-cloud.kubernetes.io/zone)"
-      values:
-      - "jp-osa-1;jp-osa-1"
-      - "jp-osa-2;jp-osa-2"
-```
+Composite iteration referes to iteration value that is composed of more than two variable values at the same time.
+We support by processing the delimit ';' as an array variable. See [PARSEC benchmark example](../examples/none/cpe_parsec.yaml).
 ### Node Profile Tuning
 [tuned.go](../controllers/tuned.go)
 This feature is dependent on [Openshift Node Tuning Operator](https://docs.openshift.com/container-platform/4.8/scalability_and_performance/using-node-tuning-operator.html). This will automatically check valid profile name from `profiles.v1.tuned.openshift.io/rendered`, label the node with each iterated value of `.nodeSelection.values`, then check `profiles.v1.tuned.openshift.io` whether the correct profile name is applied before creating a benchmark job.
@@ -92,17 +85,9 @@ When the job is completed and output is parsed and pushed as describe in [output
 - `.spec.results` lists each iteration results.
 - `.spec.bestResults` presents the best performed configuration for each scenarioID derived by `.iterationSpec.iterations` iterations. The best performed configuration is determined by maximum performance value returned from the specified parser. In case of more than one repetition, the average value of all runs will be used.
 
-Example benchmarks: 
-|Benchmark Operator| Benchmark Name | Iteration Locations | Configuration Locations | Sequential | Benchmark YAML|
-|---|---|---|---|---|---|
-|Ray Operator|Sample|.template.spec.containers[0].env[name=MAX_SCALE].value|-|false|[cpe_v1_rayjob.yaml](../benchmarks/ray_operator/cpe_v1_rayjob.yaml)|
-|Ray Operator|Codait NLP|.template.spec.containers[0].env[name=NRUNS_SERIAL].value, .template.spec.containers[0].env[name=MAX_SCALE].value|-|true|[cpe_v1_raynlpjob.yaml](../benchmarks/ray_operator/cpe_v1_raynlpjob.yaml)|
-|Benchmark Operator|Sysbench|.workload.args.tests[0].parameters.cpu-max-prime|-|true|[cpe_v1_benchmark_sysbench.yaml](../benchmarks/benchmark_operator/cpe_v1_benchmark_sysbench.yaml)|
-|Benchmark Operator|Iperf3|.workload.args.mss|.workload.args.pin_client|true|[cpe_v1_benchmark_iperf3.yaml](../benchmarks/benchmark_operator/cpe_v1_benchmark_iperf3.yaml)|
-
 ## Auto-tuning Profile
 Set `nodeSelection` value to **auto-tuned** will activate node auto-tuning mechanism
-; see [sample coremark benchmark](../benchmarks/none/cpe_coremark_autotuned.yaml)
+; see [auto-tuned Coremark benchmark](../examples/none/autotuned/coremark.yaml)
 
 To edit node tuning search space, edit configmap `cpe-operator-node-tuning-search-space` and restart controller pod
 
