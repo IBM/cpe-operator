@@ -1,0 +1,39 @@
+apiVersion: cpe.cogadvisor.io/v1
+kind: Benchmark
+metadata:
+  name: coremark
+  namespace: default
+spec:
+  benchmarkOperator:
+    name: none
+    namespace: cpe-operator-system
+  benchmarkSpec: |
+    template:
+      spec:
+        resources:
+          limits:
+            cpu: {{.cpulimit}}
+        containers:
+          - name: coremark
+            image: 
+            command:
+            - sh
+            - -c
+            - ./coremark-{{ .thread }}thread{{if ne .thread "1"}}s{{end}}.exe
+        restartPolicy: Never
+  parserKey: coremark
+  repetition: 1
+  iterationSpec:
+    configurations:
+    - name: cpulimit
+      values:
+      - "500m"
+      - "1"
+      - "2"
+    iterations:
+    - name: thread
+      values:
+      - "1"
+      - "4"
+      - "8"
+    sequential: true

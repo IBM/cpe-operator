@@ -1,0 +1,27 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: test
+  namespace: default
+spec:
+  template:
+    spec:
+      containers:
+      - name: stress
+        image: alexeiled/stress-ng
+        imagePullPolicy: IfNotPresent
+        env:
+        - name: TIMEOUT
+          value: 60s
+        - name: STRESSOR
+          value: cpu
+        - name: STRESS_LOAD
+          value: "4"
+        command:
+        - /stress-ng
+        - --$(STRESSOR)
+        - $(STRESS_LOAD)
+        - --timeout
+        - $(TIMEOUT)
+        - --metrics-brief
+      restartPolicy: Never

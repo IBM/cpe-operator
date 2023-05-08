@@ -20,12 +20,12 @@ import (
 func GetInitObject() map[string]interface{} {
 	var env1 map[string]interface{} = map[string]interface{}{
 		"name":  "A",
-		"value": "a",
+		"value": "{{.valA}}",
 	}
 
 	var env2 map[string]interface{} = map[string]interface{}{
 		"name":  "MAX_SCALE",
-		"value": "1",
+		"value": "{{.valScale}}",
 	}
 	var envlist []interface{} = []interface{}{env1, env2}
 	var object map[string]interface{} = map[string]interface{}{
@@ -41,10 +41,10 @@ func GetInitObject() map[string]interface{} {
 					},
 				},
 				"nodeSelector": map[string]interface{}{
-					"ibm.com/zone": "jp-tok-1",
+					"ibm.com/zone": "{{.zone}}",
 				},
 				"nodeSelector2": map[string]interface{}{
-					"ibm.com/zone": "jp-tok-1",
+					"ibm.com/zone": "{{.zone}}",
 				},
 			},
 		},
@@ -71,80 +71,38 @@ var instance *unstructured.Unstructured = &unstructured.Unstructured{
 
 var sampleIteration []cpev1.IterationItem = []cpev1.IterationItem{
 	cpev1.IterationItem{
-		Name:     "valA",
-		Location: ".template.spec.containers[0].env[name=A].value",
-		Values:   []string{"b", "c"},
+		Name:   "valA",
+		Values: []string{"a", "b", "c"},
 	},
 	cpev1.IterationItem{
-		Name:     "valScale",
-		Location: ".template.spec.containers[0].env[name=MAX_SCALE].value",
-		Values:   []string{"4", "8"},
+		Name:   "valScale",
+		Values: []string{"3", "4", "8"},
 	},
 	cpev1.IterationItem{
-		Name:     "zone",
-		Location: ".template.spec.nodeSelector.(ibm.com/zone);.template.spec.nodeSelector2.(ibm.com/zone)",
-		Values:   []string{"jp-tok-2;jp-tok-2"},
+		Name:   "zone",
+		Values: []string{"jp-tok-1", "jp-tok-2"},
 	},
-}
-
-var sampleFreeIteration []cpev1.IterationItem = []cpev1.IterationItem{
-	cpev1.IterationItem{
-		Name:     "valA",
-		Location: ".template.spec.containers[0].env[name=A].value",
-		Values:   []string{"b", "c"},
-	},
-	cpev1.IterationItem{
-		Name:     "valScale",
-		Location: ".template.spec.containers[0].env[name=MAX_SCALE].value",
-		Values:   []string{},
-	},
-	cpev1.IterationItem{
-		Name:     "zone",
-		Location: ".template.spec.nodeSelector.(ibm.com/zone);.template.spec.nodeSelector2.(ibm.com/zone)",
-		Values:   []string{"jp-tok-2;jp-tok-2"},
-	},
-}
-
-var expectedCombinationsWithInit []map[string]string = []map[string]string{
-	map[string]string{"valA": "a", "valScale": "4", "zone": "jp-tok-1;jp-tok-1"},
-	map[string]string{"valA": "b", "valScale": "4", "zone": "jp-tok-1;jp-tok-1"},
-	map[string]string{"valA": "c", "valScale": "4", "zone": "jp-tok-1;jp-tok-1"},
-	map[string]string{"valA": "a", "valScale": "8", "zone": "jp-tok-1;jp-tok-1"},
-	map[string]string{"valA": "b", "valScale": "8", "zone": "jp-tok-1;jp-tok-1"},
-	map[string]string{"valA": "c", "valScale": "8", "zone": "jp-tok-1;jp-tok-1"},
-	map[string]string{"valA": "a", "valScale": "3", "zone": "jp-tok-1;jp-tok-1"},
-	map[string]string{"valA": "b", "valScale": "3", "zone": "jp-tok-1;jp-tok-1"},
-	map[string]string{"valA": "c", "valScale": "3", "zone": "jp-tok-1;jp-tok-1"},
-	map[string]string{"valA": "a", "valScale": "4", "zone": "jp-tok-2;jp-tok-2"},
-	map[string]string{"valA": "b", "valScale": "4", "zone": "jp-tok-2;jp-tok-2"},
-	map[string]string{"valA": "c", "valScale": "4", "zone": "jp-tok-2;jp-tok-2"},
-	map[string]string{"valA": "a", "valScale": "8", "zone": "jp-tok-2;jp-tok-2"},
-	map[string]string{"valA": "b", "valScale": "8", "zone": "jp-tok-2;jp-tok-2"},
-	map[string]string{"valA": "c", "valScale": "8", "zone": "jp-tok-2;jp-tok-2"},
-	map[string]string{"valA": "a", "valScale": "3", "zone": "jp-tok-2;jp-tok-2"},
-	map[string]string{"valA": "b", "valScale": "3", "zone": "jp-tok-2;jp-tok-2"},
-	map[string]string{"valA": "c", "valScale": "3", "zone": "jp-tok-2;jp-tok-2"},
 }
 
 var expectedCombinations []map[string]string = []map[string]string{
-	map[string]string{"valA": "b", "valScale": "4", "zone": "jp-tok-2;jp-tok-2"},
-	map[string]string{"valA": "c", "valScale": "4", "zone": "jp-tok-2;jp-tok-2"},
-	map[string]string{"valA": "b", "valScale": "8", "zone": "jp-tok-2;jp-tok-2"},
-	map[string]string{"valA": "c", "valScale": "8", "zone": "jp-tok-2;jp-tok-2"},
-}
-
-var expectedCombinationsOfFreeIteration []map[string]string = []map[string]string{
-	map[string]string{"valA": "b", "valScale": "nil", "zone": "jp-tok-2;jp-tok-2"},
-	map[string]string{"valA": "c", "valScale": "nil", "zone": "jp-tok-2;jp-tok-2"},
-}
-
-var expectedCombinationsOfFreeIterationWithInit []map[string]string = []map[string]string{
-	map[string]string{"valA": "a", "valScale": "3", "zone": "jp-tok-1;jp-tok-1"},
-	map[string]string{"valA": "b", "valScale": "3", "zone": "jp-tok-1;jp-tok-1"},
-	map[string]string{"valA": "c", "valScale": "3", "zone": "jp-tok-1;jp-tok-1"},
-	map[string]string{"valA": "a", "valScale": "3", "zone": "jp-tok-2;jp-tok-2"},
-	map[string]string{"valA": "b", "valScale": "3", "zone": "jp-tok-2;jp-tok-2"},
-	map[string]string{"valA": "c", "valScale": "3", "zone": "jp-tok-2;jp-tok-2"},
+	map[string]string{"valA": "a", "valScale": "3", "zone": "jp-tok-1"},
+	map[string]string{"valA": "b", "valScale": "3", "zone": "jp-tok-1"},
+	map[string]string{"valA": "c", "valScale": "3", "zone": "jp-tok-1"},
+	map[string]string{"valA": "a", "valScale": "4", "zone": "jp-tok-1"},
+	map[string]string{"valA": "b", "valScale": "4", "zone": "jp-tok-1"},
+	map[string]string{"valA": "c", "valScale": "4", "zone": "jp-tok-1"},
+	map[string]string{"valA": "a", "valScale": "8", "zone": "jp-tok-1"},
+	map[string]string{"valA": "b", "valScale": "8", "zone": "jp-tok-1"},
+	map[string]string{"valA": "c", "valScale": "8", "zone": "jp-tok-1"},
+	map[string]string{"valA": "a", "valScale": "3", "zone": "jp-tok-2"},
+	map[string]string{"valA": "b", "valScale": "3", "zone": "jp-tok-2"},
+	map[string]string{"valA": "c", "valScale": "3", "zone": "jp-tok-2"},
+	map[string]string{"valA": "a", "valScale": "4", "zone": "jp-tok-2"},
+	map[string]string{"valA": "b", "valScale": "4", "zone": "jp-tok-2"},
+	map[string]string{"valA": "c", "valScale": "4", "zone": "jp-tok-2"},
+	map[string]string{"valA": "a", "valScale": "8", "zone": "jp-tok-2"},
+	map[string]string{"valA": "b", "valScale": "8", "zone": "jp-tok-2"},
+	map[string]string{"valA": "c", "valScale": "8", "zone": "jp-tok-2"},
 }
 
 const (
@@ -195,70 +153,4 @@ func TestGetAllCombination(t *testing.T) {
 	fmt.Printf("Combinations: %v\n", combinations)
 	assert.Equal(t, len(combinations), len(expectedCombinations))
 	assert.Equal(t, combinations, expectedCombinations)
-}
-
-func TestGetInitCombination(t *testing.T) {
-	object := GetInitObject()
-	containers := object["template"].(map[string]interface{})["spec"].(map[string]interface{})["containers"].([]interface{})
-	envList := containers[0].(map[string]interface{})["env"].([]interface{})
-	var valA, valScale, zone string
-	for _, env := range envList {
-		name := env.(map[string]interface{})["name"]
-		if name == "A" {
-			valA = env.(map[string]interface{})["value"].(string)
-		} else if name == "MAX_SCALE" {
-			valScale = env.(map[string]interface{})["value"].(string)
-		}
-	}
-	object = GetInitObject()
-	zone1 := object["template"].(map[string]interface{})["spec"].(map[string]interface{})["nodeSelector"].(map[string]interface{})["ibm.com/zone"].(string)
-	zone2 := object["template"].(map[string]interface{})["spec"].(map[string]interface{})["nodeSelector2"].(map[string]interface{})["ibm.com/zone"].(string)
-	zone = zone1 + ";" + zone2
-
-	var expectedInit map[string]string = map[string]string{
-		"valA":     valA,
-		"valScale": valScale,
-		"zone":     zone,
-	}
-	fmt.Printf("ValA %v\n", valA)
-
-	initCombination := iterationHandler.GetInitCombination(object, sampleIteration)
-	fmt.Printf("Init Combination: %v\n", initCombination)
-	assert.Equal(t, initCombination, expectedInit)
-}
-
-func TestGetInitAndAllCombination(t *testing.T) {
-	object := GetInitObject()
-	combinations := iterationHandler.GetInitAndAllCombination(object, sampleIteration)
-	fmt.Printf("Combinations: %v\n", combinations)
-	assert.Equal(t, len(combinations), len(expectedCombinationsWithInit))
-	var nextMap map[string]string
-	nextMap, combinations = combinations[0], combinations[1:]
-	fmt.Printf("NextMap: %v, Combinations: %v\n", nextMap, combinations)
-
-	combinations = iterationHandler.GetInitAndAllCombination(object, sampleFreeIteration)
-	fmt.Printf("Combinations from Free Iteration: %v\n", combinations)
-	assert.Equal(t, len(combinations), len(expectedCombinationsOfFreeIterationWithInit))
-
-	null_object = map[string]interface{}{
-		"template": map[string]interface{}{
-			"spec": map[string]interface{}{
-				"containers": []interface{}{
-					map[string]interface{}{
-						"env": null_list,
-					},
-				},
-			},
-		},
-	}
-
-	combinations = iterationHandler.GetInitAndAllCombination(null_object, sampleIteration)
-	fmt.Printf("Null combinations: %v\n", combinations)
-	assert.Equal(t, len(combinations), len(expectedCombinations))
-	assert.Equal(t, combinations, expectedCombinations)
-
-	combinations = iterationHandler.GetInitAndAllCombination(null_object, sampleFreeIteration)
-	fmt.Printf("Combinations from Free Iteration (Null): %v\n", combinations)
-	assert.Equal(t, len(combinations), len(expectedCombinationsOfFreeIteration))
-
 }

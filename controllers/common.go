@@ -6,8 +6,8 @@
 package controllers
 
 import (
+	"bytes"
 	"context"
-	"errors"
 	"fmt"
 	"hash/fnv"
 	"io/ioutil"
@@ -15,6 +15,7 @@ import (
 	"regexp"
 	"sort"
 	"strings"
+	"text/template"
 
 	cpev1 "github.com/IBM/cpe-operator/api/v1"
 	"github.com/go-logr/logr"
@@ -147,6 +148,9 @@ func getIterationPairStr(key string, val string) string {
 
 func getSubfixFromIterationLabel(iterationLabel map[string]string) string {
 	subfix := ""
+	if len(iterationLabel) == 0 {
+		return ""
+	}
 	keys := make([]string, 0, len(iterationLabel))
 	for key := range iterationLabel {
 		keys = append(keys, key)
@@ -267,17 +271,11 @@ func GetSimpleJobGVK(benchmarkOperator *cpev1.BenchmarkOperator) schema.GroupVer
 	return gvk
 }
 
-func GetInfoToIterateFromBenchmark(benchmark *cpev1.Benchmark) (obj *unstructured.Unstructured, firstLabel map[string]string, iterationLabels []map[string]string, builds []string, maxRepetition int) {
+func GetIteratedValues(benchmark *cpev1.Benchmark) (firstLabel map[string]string, iterationLabels []map[string]string, builds []string, maxRepetition int) {
 	// iterations
-	benchmarkSpecStr := benchmark.Spec.Spec
-	var decUnstructured = yaml.NewDecodingSerializer(unstructured.UnstructuredJSONScheme)
-	obj = &unstructured.Unstructured{}
-	decUnstructured.Decode([]byte(benchmarkSpecStr), nil, obj)
-
 	iterations := GetCombinedIterations(benchmark)
-
 	if len(iterations) > 0 {
-		iterationLabels = itrHandler.GetInitAndAllCombination(obj.Object, iterations)
+		iterationLabels = itrHandler.GetAllCombination(iterations)
 		firstLabel, iterationLabels = iterationLabels[0], iterationLabels[1:]
 	} else {
 		firstLabel = make(map[string]string)
@@ -297,7 +295,7 @@ func GetInfoToIterateFromBenchmark(benchmark *cpev1.Benchmark) (obj *unstructure
 	if maxRepetition <= 0 {
 		maxRepetition = 1
 	}
-	return obj, firstLabel, iterationLabels, builds, maxRepetition
+	return firstLabel, iterationLabels, builds, maxRepetition
 }
 
 func patchBenchmarkStatus(client client.Client, benchmark *cpev1.Benchmark, jobHash string, iterationLabel map[string]string, build string, repInString string) error {
@@ -324,7 +322,20 @@ func GetJobCompletedStatus(benchmark *cpev1.Benchmark) string {
 	return fmt.Sprintf("%d/%d", completedJob, len(benchmark.Status.Hash))
 }
 
-func getBenchmarkWithIteration(client client.Client, ns string, benchmark *cpev1.Benchmark, benchmarkObj map[string]interface{}, iterationLabel map[string]string, build string, repetition int) *unstructured.Unstructured {
+func GetExpandLabel(iterationLabel map[string]string) map[string]interface{} {
+	expandLabel := make(map[string]interface{})
+	for key, val := range iterationLabel {
+		valSplits := strings.Split(val, ";")
+		if len(valSplits) > 1 {
+			expandLabel[key] = valSplits
+		} else {
+			expandLabel[key] = val
+		}
+	}
+	return expandLabel
+}
+
+func GetBenchmarkWithIteration(client client.Client, ns string, benchmark *cpev1.Benchmark, benchmarkObj map[string]interface{}, iterationLabel map[string]string, build string, repetition int) (*unstructured.Unstructured, error) {
 
 	labels := map[string]interface{}{BENCHMARK_LABEL: benchmark.ObjectMeta.Name}
 	for key, value := range iterationLabel {
@@ -342,17 +353,25 @@ func getBenchmarkWithIteration(client client.Client, ns string, benchmark *cpev1
 	labels[JOBHASH_KEY] = jobHash
 
 	benchmarkObj["metadata"] = map[string]interface{}{"name": jobName, "namespace": ns, "labels": labels}
-	specObject := benchmarkObj["spec"].(map[string]interface{})
-	for _, item := range benchmark.Spec.IterationSpec.Iteration {
-		valueToSet := iterationLabel[item.Name]
-		location := item.Location
-		specObject = itrHandler.UpdateValue(specObject, location, valueToSet)
+
+	// generate job spec
+	tmpl, err := template.New("").Parse(benchmark.Spec.Spec)
+	if err != nil {
+		return nil, err
 	}
-	for _, item := range benchmark.Spec.IterationSpec.Configuration {
-		valueToSet := iterationLabel[item.Name]
-		location := item.Location
-		specObject = itrHandler.UpdateValue(specObject, location, valueToSet)
+	var buffer bytes.Buffer
+	expandLabel := GetExpandLabel(iterationLabel)
+	err = tmpl.Execute(&buffer, expandLabel)
+	if err != nil {
+		return nil, err
 	}
+	executedSpec := buffer.String()
+
+	var decUnstructured = yaml.NewDecodingSerializer(unstructured.UnstructuredJSONScheme)
+	obj := &unstructured.Unstructured{}
+	decUnstructured.Decode([]byte(executedSpec), nil, obj)
+
+	specObject := obj.Object
 
 	if _, ok := iterationLabel[NODESELECT_ITR_NAME]; ok {
 		if iterationLabel[NODESELECT_ITR_NAME] != NODESELECT_ITR_DEFAULT {
@@ -374,7 +393,7 @@ func getBenchmarkWithIteration(client client.Client, ns string, benchmark *cpev1
 	extBenchmark := &unstructured.Unstructured{
 		Object: benchmarkObj,
 	}
-	return extBenchmark
+	return extBenchmark, nil
 }
 
 func CheckIfJobDone(benchmark *cpev1.Benchmark, jobName string) bool {
@@ -408,11 +427,11 @@ func CreateIfNotExists(dr dynamic.ResourceInterface, benchmark *cpev1.Benchmark,
 	if completed {
 		if nodeSelectionSpec != nil {
 			tunedValue = getTunedValue(nodeSelectionSpec, unstructuredInstance)
-			if tunedValue == RESERVED_AUTOTUNED_PROFILE_NAME {
+			if tunedValue == RESERVED_AUTOTUNED_PROFILE_NAME && tunedHandler != nil {
 				sampledProfileMaps, ok := <-nodeTunedOptimizer.SampleQueue
 				if !ok {
 					if nodeTunedOptimizer.FinalizedApplied {
-						return errors.New("No more sample"), true
+						return fmt.Errorf("no more sample"), true
 					} else {
 						sampledProfileMaps = nodeTunedOptimizer.FinalizedTunedProfile
 						nodeTunedOptimizer.SetFinalizedApplied()
@@ -433,7 +452,7 @@ func CreateIfNotExists(dr dynamic.ResourceInterface, benchmark *cpev1.Benchmark,
 
 	if err != nil || autoTuned { // create if not exists or autotuned deleted
 		// handler tuned profile
-		if tunedValue != NODESELECT_ITR_DEFAULT {
+		if tunedValue != NODESELECT_ITR_DEFAULT && tunedHandler != nil {
 			tunedHandler.ApplyProfile(nodeSelectionSpec.TargetSelector, tunedValue)
 		}
 		// create
@@ -455,7 +474,7 @@ func checkHashExist(benchmark *cpev1.Benchmark, jobHash string) bool {
 }
 
 func JobListChanged(benchmark *cpev1.Benchmark) bool {
-	_, firstLabel, iterationLabels, builds, maxRepetition := GetInfoToIterateFromBenchmark(benchmark)
+	firstLabel, iterationLabels, builds, maxRepetition := GetIteratedValues(benchmark)
 	noHash := true
 	repetition := 0
 	for {
@@ -483,14 +502,13 @@ func JobListChanged(benchmark *cpev1.Benchmark) bool {
 	return true
 }
 
-func NewBenchmarkObject(benchmarkOperator *cpev1.BenchmarkOperator, obj *unstructured.Unstructured) map[string]interface{} {
+func NewBenchmarkObject(benchmarkOperator *cpev1.BenchmarkOperator) map[string]interface{} {
 	apiVersion := benchmarkOperator.Spec.APIVersion
 	kind := benchmarkOperator.Spec.Kind
 
 	benchmarkObj := make(map[string]interface{})
 	benchmarkObj["apiVersion"] = apiVersion
 	benchmarkObj["kind"] = kind
-	benchmarkObj["spec"] = obj.DeepCopy().Object
 	return benchmarkObj
 }
 
@@ -504,13 +522,17 @@ func CreateFromOperator(jtm *JobTrackManager, client client.Client, dc *discover
 
 	dr := getResourceInterface(dc, dyn, &gvk, benchmark.Namespace)
 
-	obj, firstLabel, iterationLabels, builds, maxRepetition := GetInfoToIterateFromBenchmark(benchmark)
+	if dr == nil {
+		reqLogger.Info(fmt.Sprintf("Benchmark %s cannot getResourceInterface", benchmark.GetName()))
+		return nil
+	}
+
+	firstLabel, iterationLabels, builds, maxRepetition := GetIteratedValues(benchmark)
 
 	var waitingJob []*unstructured.Unstructured
 	jobOptMap := make(map[string]*BaysesOptimizer)
 	isNew := false
 	var err error
-	err = nil
 	repetition := 0
 	reqLogger.Info(fmt.Sprintf("Max Repetition: %d", maxRepetition))
 	for {
@@ -521,8 +543,11 @@ func CreateFromOperator(jtm *JobTrackManager, client client.Client, dc *discover
 
 		for _, build := range builds {
 			// for firstLabel (iteration0 or nolabel)
-			firstBenchmarkObj := NewBenchmarkObject(benchmarkOperator, obj)
-			extBenchmark := getBenchmarkWithIteration(client, benchmark.Namespace, benchmark, firstBenchmarkObj, firstLabel, build, repetition)
+			firstBenchmarkObj := NewBenchmarkObject(benchmarkOperator)
+			extBenchmark, err := GetBenchmarkWithIteration(client, benchmark.Namespace, benchmark, firstBenchmarkObj, firstLabel, build, repetition)
+			if err != nil {
+				reqLogger.Info(fmt.Sprintf("Failed to GetBenchmarkWithIteration: %v)", err))
+			}
 			nodeTunedOptimizer := NewBayesOptimizer(benchmark.Spec.IterationSpec.Minimize)
 			jobName := extBenchmark.GetName()
 			jobOptMap[jobName] = nodeTunedOptimizer
@@ -530,7 +555,7 @@ func CreateFromOperator(jtm *JobTrackManager, client client.Client, dc *discover
 			nodeSelectionSpec := benchmark.Spec.IterationSpec.NodeSelection
 			if nodeSelectionSpec != nil {
 				tunedValue := getTunedValue(nodeSelectionSpec, extBenchmark)
-				if tunedValue == RESERVED_AUTOTUNED_PROFILE_NAME {
+				if tunedValue == RESERVED_AUTOTUNED_PROFILE_NAME && tunedHandler != nil {
 					// activate auto-tuning
 					go nodeTunedOptimizer.AutoTune()
 				} else {
@@ -544,6 +569,9 @@ func CreateFromOperator(jtm *JobTrackManager, client client.Client, dc *discover
 			if err == nil && !isNew {
 				err, isNew = CreateIfNotExists(dr, benchmark, extBenchmark, adaptor, tunedHandler, nodeTunedOptimizer)
 				reqLogger.Info(fmt.Sprintf("Try creating %s (first label)", extBenchmark.GetName()))
+				if err != nil {
+					reqLogger.Info(fmt.Sprintf("Failed to create benchmark %s: %v)", benchmark.Name, err))
+				}
 			} else {
 				_, existErr := dr.Get(context.TODO(), extBenchmark.GetName(), metav1.GetOptions{})
 				if existErr != nil {
@@ -552,8 +580,12 @@ func CreateFromOperator(jtm *JobTrackManager, client client.Client, dc *discover
 			}
 			// for the rest iteration
 			for _, iterationLabel := range iterationLabels {
-				benchmarkObj := NewBenchmarkObject(benchmarkOperator, obj)
-				waitExtBenchmark := getBenchmarkWithIteration(client, benchmark.Namespace, benchmark, benchmarkObj, iterationLabel, build, repetition)
+				benchmarkObj := NewBenchmarkObject(benchmarkOperator)
+				waitExtBenchmark, err := GetBenchmarkWithIteration(client, benchmark.Namespace, benchmark, benchmarkObj, iterationLabel, build, repetition)
+				if err != nil {
+					reqLogger.Info(fmt.Sprintf("Failed to GetBenchmarkWithIteration: %v)", err))
+					continue
+				}
 				nodeTunedOptimizer := NewBayesOptimizer(benchmark.Spec.IterationSpec.Minimize)
 				jobName = waitExtBenchmark.GetName()
 				jobOptMap[jobName] = nodeTunedOptimizer
@@ -577,6 +609,9 @@ func CreateFromOperator(jtm *JobTrackManager, client client.Client, dc *discover
 					if err == nil && !isNew {
 						err, isNew = CreateIfNotExists(dr, benchmark, waitExtBenchmark, adaptor, tunedHandler, nodeTunedOptimizer)
 						reqLogger.Info(fmt.Sprintf("Try creating %s", waitExtBenchmark.GetName()))
+						if err != nil {
+							reqLogger.Info(fmt.Sprintf("Failed to create benchmark %s: %v)", benchmark.Name, err))
+						}
 					} else {
 						_, existErr := dr.Get(context.TODO(), waitExtBenchmark.GetName(), metav1.GetOptions{})
 						if existErr != nil {
@@ -585,6 +620,9 @@ func CreateFromOperator(jtm *JobTrackManager, client client.Client, dc *discover
 					}
 				} else {
 					err, _ = CreateIfNotExists(dr, benchmark, waitExtBenchmark, adaptor, tunedHandler, nodeTunedOptimizer)
+					if err != nil {
+						reqLogger.Info(fmt.Sprintf("Failed to create benchmark %s: %v)", benchmark.Name, err))
+					}
 				}
 			}
 		}
@@ -611,7 +649,7 @@ func DeleteFromOperator(dc *discovery.DiscoveryClient, dyn dynamic.Interface, be
 	gvk := schema.FromAPIVersionAndKind(apiVersion, kind)
 	dr := getResourceInterface(dc, dyn, &gvk, ns)
 
-	_, firstLabel, iterationLabels, builds, maxRepetition := GetInfoToIterateFromBenchmark(benchmark)
+	firstLabel, iterationLabels, builds, maxRepetition := GetIteratedValues(benchmark)
 	repetition := 0
 	var err error
 	for {
@@ -634,7 +672,6 @@ func DeleteFromOperator(dc *discovery.DiscoveryClient, dyn dynamic.Interface, be
 
 	}
 	return err
-
 }
 
 func GetCombinedIterations(benchmark *cpev1.Benchmark) []cpev1.IterationItem {
