@@ -65,9 +65,5 @@ spec:
           requests:
             cpu: 100m
             memory: 20Mi
-      volumes:
-      - name: tuned-search-space
-        configMap:
-          name: node-tuning-search-space
       serviceAccountName: controller-manager
       terminationGracePeriodSeconds: 10

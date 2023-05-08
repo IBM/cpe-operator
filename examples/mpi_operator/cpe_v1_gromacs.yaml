@@ -23,12 +23,12 @@ spec:
               - mpirun
               - --allow-run-as-root
               - -np
-              - $(NP)
+              - {{ .np }}
               - /usr/local/gromacs/bin/mdrun_mpi
               - -s
-              - $(DATASET)/benchmark.tpr
+              - {{ .dataset }}/benchmark.tpr
               - -ntomp
-              - $(NTOMP)
+              - {{ .ntomp }}
             nodeSelector:
               ibm-cloud.kubernetes.io/worker-pool-name: cpe
             imagePullSecrets:
@@ -52,16 +52,13 @@ spec:
     sequential: true
     configurations:
       - name: dataset
-        location: ".mpiReplicaSpecs.Launcher.template.spec.containers[0].env[name=DATASET].value"
         values:
         - "20k-atoms"
     iterations:
       - name: np
-        location: ".mpiReplicaSpecs.Launcher.template.spec.containers[0].env[name=NP].value"
         values:
         - "1"
       - name: ntomp
-        location: ".mpiReplicaSpecs.Launcher.template.spec.containers[0].env[name=NTOMP].value"
         values:
         - "4"
   parserKey: gromacs

@@ -1,0 +1,39 @@
+apiVersion: cpe.cogadvisor.io/v1
+kind: Benchmark
+metadata:
+  name: coremark
+spec:
+  benchmarkOperator:
+    name: none
+    namespace: default
+  benchmarkSpec: |
+    backoffLimit: 0
+    template:
+      spec:
+        containers:
+          - name: coremark
+            image: {{ .image }}
+            command:
+            - sh
+            - -c
+            - ./coremark-{{ .thread }}thread{{if ne .thread "1"}}s{{end}}.exe
+        restartPolicy: Never
+  parserKey: coremark
+  repetition: 3
+  iterationSpec:
+    iterations:
+    - name: thread
+      values:
+      - "1"
+      - "4"
+      - "8"
+      - "16"
+      - "32"
+    nodeSelection:
+      location: ".template.spec.nodeSelector"
+      values:
+        - "auto-tuned"
+      selector:
+        matchLabels:
+          beta.kubernetes.io/instance-type: "bx2.4x16"
+    sequential: true

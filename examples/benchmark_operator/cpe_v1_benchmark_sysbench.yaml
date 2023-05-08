@@ -15,7 +15,7 @@ spec:
         tests:
         - name: cpu
           parameters:
-            cpu-max-prime: 2000
+            cpu-max-prime: {{ .maxprime }}
         - name: fileio
           parameters:
             file-test-mode: rndrw
@@ -23,7 +23,6 @@ spec:
   iterationSpec:
     iterations:
     - name: maxprime
-      location: .workload.args.tests[0].parameters.cpu-max-prime
       values:
       - "3000"
     sequential: true

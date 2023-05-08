@@ -31,7 +31,10 @@ iteration/node-tuning-test
 transfer.sh
 kubectl
 config-old/
+deploy/
+drawio/
 
 benchmarks/benchmark_operator/cpe_v1_benchmark_sysbench_*
 benchmarks/benchmark_operator/multi-cluster
 benchmarks/*/note*
+

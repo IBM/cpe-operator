@@ -1,0 +1,19 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: controller-manager
+  namespace: system
+spec:
+  template:
+    spec:
+      securityContext:
+        runAsNonRoot: true
+      containers:
+      - volumeMounts:
+        - name: tuned-search-space
+          mountPath: /etc/search-space
+        name: manager
+      volumes:
+      - name: tuned-search-space
+        configMap:
+          name: node-tuning-search-space

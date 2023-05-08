@@ -1,0 +1,6 @@
+credential for image pulling requirement:
+kubectl create -f config/secret/all-icr-io-config.yaml -n ray-operator-system
+
+openshift requirement:
+oc adm policy add-scc-to-user privileged system:serviceaccount:ray-operator-system:ray-operator-serviceaccount 
+

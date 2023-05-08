@@ -116,12 +116,6 @@ docker-build: test ## Build docker image with the manager.
 docker-push: ## Push docker image with the manager.
 	docker push ${IMG}
 
-##@ Update Environment
-update-env:
-	envsubst < config/manager/kustomization_template.yaml > config/manager/kustomization.yaml
-	envsubst < config/manager/manager_template.yaml > config/manager/manager.yaml
-	envsubst < config/parser/parser_template.yaml > config/parser/parser.yaml
-
 ##@ Deployment
 install: manifests kustomize ## Install CRDs into the K8s cluster specified in ~/.kube/config.
 	$(KUSTOMIZE) build config/crd | kubectl apply -f -
@@ -129,13 +123,15 @@ install: manifests kustomize ## Install CRDs into the K8s cluster specified in ~
 uninstall: manifests kustomize ## Uninstall CRDs from the K8s cluster specified in ~/.kube/config.
 	$(KUSTOMIZE) build config/crd | kubectl delete -f -
 
-deploy: update-env manifests kustomize ## Deploy controller to the K8s cluster specified in ~/.kube/config.
+deploy: manifests kustomize ## Deploy controller to the K8s cluster specified in ~/.kube/config.
 	cd config/manager && $(KUSTOMIZE) edit set image controller=${IMG}
+	cd config/parser && $(KUSTOMIZE) edit set image parser=${PARSER_IMG}
 	$(KUSTOMIZE) build config/default | kubectl apply -f -
 
-yaml: update-env manifests kustomize
+yaml: manifests kustomize
 	cd config/manager && $(KUSTOMIZE) edit set image controller=${IMG}
-	$(KUSTOMIZE) build config/default > deploy/simple-deploy.yaml
+	cd config/parser && $(KUSTOMIZE) edit set image parser=${PARSER_IMG}
+	$(KUSTOMIZE) build config/default > generated-deployment.yaml
 
 
 undeploy: ## Undeploy controller from the K8s cluster specified in ~/.kube/config.

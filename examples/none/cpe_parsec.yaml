@@ -13,26 +13,24 @@ spec:
         - name: parsec
           image: sunyanan/parsec:v3.0
           imagePullPolicy: Always
-          env:
-          - name: PACKAGE_ARG
-          - name: INPUT_ARG
           command:
-          - bash
-          - -c
-          - 'parsecmgmt -a run -p ${PACKAGE_ARG} -i ${INPUT_ARG}'
+          - parsecmgmt 
+          - -a
+          - run
+          - -p
+          - {{ .package }} 
+          - -i
+          - {{ .input }}
         restartPolicy: Never
-    backoffLimit: 4
   parserKey: time
-  repetition: 5
-  interval: 5
+  repetition: 3
+  interval: 30
   iterationSpec:
     iterations:
     - name: input
-      location: ".template.spec.containers[0].env[name=INPUT_ARG].value"
       values:
       - "native"
     - name: package
-      location: ".template.spec.containers[0].env[name=PACKAGE_ARG].value"
       values:
       - "bodytrack"
       - "canneal"

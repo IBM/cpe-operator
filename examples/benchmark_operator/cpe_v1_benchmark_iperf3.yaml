@@ -14,8 +14,8 @@ spec:
         pairs: 1
         hostnetwork: false
         pin: true
-        pin_server: "10.248.0.55"
-        pin_client: "10.248.0.58"
+        pin_server: {{ index .pair 0 }}
+        pin_client: {{ index .pair 1 }}
         port: 5201
         transmit_type: time
         transmit_value: 60
@@ -27,8 +27,6 @@ spec:
   parserKey: iperf3
   iterationSpec:
     configurations:
-    - name: client
-      location: ".workload.args.pin_client"
-    - name: server
-      location: ".workload.args.pin_server"
-    sequential: true
+    - name: pair
+      values:
+      - "10.248.0.55;10.248.0.58"

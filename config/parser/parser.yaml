@@ -4,6 +4,7 @@ metadata:
   name: cpe-parser
   labels:
     app: web
+  namespace: system
 spec:
   replicas: 1
   selector:

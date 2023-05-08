@@ -13,12 +13,17 @@ namePrefix: cpe-operator-
 #  someName: someValue
 
 bases:
-- ../tuned
-- ../parser
-- ../secret
 - ../crd
 - ../rbac
 - ../manager
+# [PARSER]
+- ../parser
+# [PROMETHEUS] To enable prometheus monitor, uncomment all sections with 'PROMETHEUS'.
+#   the corresponding rbac is linked to prometheus in openshift-monitoring namespace
+#   need to reload the promethus config after deployment `curl -X POST :9090/-/reload`
+- ../prometheus
+# [AUTO-TUNE] when Node Tuning Operator is available, deploy node-tuning-search-space
+# - ../tuned
 # [WEBHOOK] To enable webhook, uncomment all the sections with [WEBHOOK] prefix including the one in
 # crd/kustomization.yaml
 #- ../webhook
@@ -28,6 +33,11 @@ bases:
 - ../prometheus
 
 patchesStrategicMerge:
+# [LOG-COS] patch Cloud Object Storage setting
+# - patches/log_cos.yaml
+# [AUTO-TUNE] when Node Tuning Operator is available, patch tuning config to controller
+# - patches/auto_tune.yaml
+
 # Protect the /metrics endpoint by putting it behind auth.
 # If you want your controller-manager to expose the /metrics
 # endpoint w/o any authn/z, please comment the following line.
