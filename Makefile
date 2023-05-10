@@ -7,7 +7,7 @@
 # To re-generate a bundle for another specific version without changing the standard setup, you can:
 # - use the VERSION as arg of the bundle target (e.g make bundle VERSION=0.0.2)
 # - use environment variables to overwrite this value (e.g export VERSION=0.0.2)
-export VERSION ?= 0.0.1
+export VERSION ?= 1.0.0
 
 # CHANNELS define the bundle channels used in the bundle.
 # Add a new line here if you would like to change its default config. (E.g CHANNELS = "preview,fast,stable")
@@ -29,26 +29,28 @@ endif
 BUNDLE_METADATA_OPTS ?= $(BUNDLE_CHANNELS) $(BUNDLE_DEFAULT_CHANNEL)
 
 
-export IMAGE_REGISTRY ?= your-repo
+export IMAGE_REGISTRY ?= ghcr.io/ibm
 # IMAGE_TAG_BASE defines the docker.io namespace and part of the image name for remote images.
 # This variable is used to construct full image tags for bundle and catalog images.
 #
 # For example, running 'make bundle-build bundle-push catalog-build catalog-push' will build and push both
 # cogadvisor.io/cpe-operator-bundle:$VERSION and cogadvisor.io/cpe-operator-catalog:$VERSION.
-IMAGE_TAG_BASE ?= cpe/operator
+IMAGE_TAG_BASE ?= cpe-operator
 
 # BUNDLE_IMG defines the image:tag used for the bundle.
 # You can use it as an arg. (E.g make bundle-build BUNDLE_IMG=<some-registry>/<project-name-bundle>:<tag>)
 # BUNDLE_IMG ?= $(IMAGE_TAG_BASE)-bundle:v$(VERSION)
-BUNDLE_IMG ?= $(IMAGE_REGISTRY)/$(IMAGE_TAG_BASE)-bundle:v$(VERSION)
+BUNDLE_IMG ?= $(IMAGE_REGISTRY)/$(IMAGE_TAG_BASE)/bundle:v$(VERSION)
 
 # Image URL to use all building/pushing image targets
 # IMG ?= controller:latest
-IMG ?= $(IMAGE_REGISTRY)/$(IMAGE_TAG_BASE)-controller:v$(VERSION)
-PARSER_IMG ?= $(IMAGE_REGISTRY)/cpe/parser:v$(VERSION)
+IMG ?= $(IMAGE_REGISTRY)/$(IMAGE_TAG_BASE)/controller:v$(VERSION)
+export PARSER_IMG ?= $(IMAGE_REGISTRY)/$(IMAGE_TAG_BASE)/parser:v$(VERSION)
 
 # Produce CRDs that work back to Kubernetes 1.11 (no version conversion)
 CRD_OPTIONS ?= "crd:trivialVersions=true,preserveUnknownFields=false"
+
+SHELL := /bin/bash
 
 # Get the currently used golang install path (in GOPATH/bin, unless GOBIN is set)
 ifeq (,$(shell go env GOBIN))
@@ -60,8 +62,6 @@ endif
 
 # CPE environments
 export PUSHGATEWAY_URL ?= pushgateway-prometheus-pushgateway.cpe-monitoring-system:9091
-export COS_SECRET ?= cpe-cos-key
-export PULL_SECRET ?= res-cpe-team-docker-local
 export CLUSTER_ID ?= $(shell kubectl config current-context | cut -d "/" -f 1)
 
 all: build
@@ -96,8 +96,8 @@ fmt: ## Run go fmt against code.
 vet: ## Run go vet against code.
 	go vet ./...
 
+
 ENVTEST_ASSETS_DIR=$(shell pwd)/testbin
-test: SHELL := /bin/bash
 test: manifests generate fmt vet ## Run tests.
 	mkdir -p ${ENVTEST_ASSETS_DIR}
 	test -f ${ENVTEST_ASSETS_DIR}/setup-envtest.sh || curl -sSLo ${ENVTEST_ASSETS_DIR}/setup-envtest.sh https://raw.githubusercontent.com/kubernetes-sigs/controller-runtime/v0.7.2/hack/setup-envtest.sh
