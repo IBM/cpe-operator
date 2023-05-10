@@ -17,7 +17,7 @@ spec:
     spec:
       containers:
         - name: cpe-parser
-          image: your-repo/cpe/parser:v0.0.1
+          image: ghcr.io/ibm/cpe/parser:v0.0.1
           imagePullPolicy: Always
           ports:
             - containerPort: 8080
