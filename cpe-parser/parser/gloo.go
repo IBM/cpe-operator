@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: Apache2.0
  */
 
- package parser
+package parser
 
 import (
 	"bufio"
@@ -18,12 +18,11 @@ type GlooParser struct {
 }
 
 /*
-# OSU MPI
-# Size          Latency (us)
+ # OSU MPI
+ # Size          Latency (us)
 */
 
 const (
-	GLOOLINE             = "===================================================================================================="
 	GLOO_PERFORMANCE_KEY = "bandwidth_GBps"
 )
 
@@ -53,7 +52,7 @@ func (p *GlooParser) ParseValue(body []byte) (map[string]interface{}, error) {
 			return nil, err
 		}
 		if linecount < 2 {
-			if strings.Contains(linestr, GLOOLINE) {
+			if strings.Contains(linestr, BIGLINE) {
 				linecount += 1
 			}
 		} else {
