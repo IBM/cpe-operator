@@ -33,6 +33,7 @@ var linpackParser parser.Parser = parser.NewLinpackParser()
 var timeParser parser.Parser = parser.NewTimeParser()
 var stressParser parser.Parser = parser.NewStressParser()
 var mlperfParser parser.Parser = parser.NewMlPerfParser()
+var fmworkParser parser.Parser = parser.NewFMWorkParser()
 
 var parserMap map[string]parser.Parser = map[string]parser.Parser{
 	"codait":   codaitParser,
@@ -49,6 +50,7 @@ var parserMap map[string]parser.Parser = map[string]parser.Parser{
 	"time":     timeParser,
 	"stress":   stressParser,
 	"mlperf":   mlperfParser,
+	"fmwork":   fmworkParser,
 }
 
 /////////////////////////////////////////////
