@@ -202,7 +202,7 @@ func (r *BenchmarkOperatorReconciler) Reconcile(ctx context.Context, req ctrl.Re
 				rbacv1.Subject{
 					Kind:      "ServiceAccount",
 					Name:      "cpe-operator-controller-manager",
-					Namespace: "cpe-operator-system",
+					Namespace: operatorNamespace,
 				},
 			},
 			RoleRef: roleRef,
