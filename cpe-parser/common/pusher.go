@@ -16,7 +16,7 @@ import (
 	"github.com/prometheus/client_golang/prometheus/push"
 )
 
-var pushgatewayURL string = os.Getenv("PUSHGATEWAY_URL")
+var PushgatewayURL string = os.Getenv("PUSHGATEWAY_URL")
 
 func relabelKey(key string) string {
 	key = strings.ToLower(key)
@@ -124,7 +124,7 @@ func GetGauges(parserKey string, instance string, podName string, values map[str
 }
 
 func PushValues(parserKey string, clusterID string, instance string, benchmarkName string, jobName string, podName string, const_labels map[string]string, values map[string]interface{}) error {
-	if pushgatewayURL == "" {
+	if PushgatewayURL == "" {
 		return fmt.Errorf("No PUSHGATEWAY_URL set")
 	}
 
@@ -135,7 +135,7 @@ func PushValues(parserKey string, clusterID string, instance string, benchmarkNa
 	})
 	completionTime.SetToCurrentTime()
 
-	pusher := push.New(pushgatewayURL, jobName)
+	pusher := push.New(PushgatewayURL, jobName)
 	for _, gauge := range gauges {
 		pusher.Collector(gauge)
 	}

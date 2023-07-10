@@ -184,18 +184,16 @@ func ReqPushLog(w http.ResponseWriter, r *http.Request) {
 				status = "ERROR"
 				msg = fmt.Sprintf("%v", err)
 			} else {
-				err := common.PushValues(logSpec.Parser, logSpec.ClusterID, logSpec.Instance, logSpec.BenchmarkName, logSpec.JobName, logSpec.PodName, logSpec.ConstLabels, values)
-				if err != nil {
-					status = "ERROR"
-					msg = fmt.Sprintf("%v", err)
-					pkey = ppkey
-					pval = ppval
-				} else {
-					status = "OK"
-					msg = fmt.Sprintf("%v", logSpec.ConstLabels)
-					pkey = ppkey
-					pval = ppval
+				if common.PushgatewayURL != "" {
+					err := common.PushValues(logSpec.Parser, logSpec.ClusterID, logSpec.Instance, logSpec.BenchmarkName, logSpec.JobName, logSpec.PodName, logSpec.ConstLabels, values)
+					if err != nil {
+						fmt.Println("cannot push values to push gateway: ", err)
+					}
 				}
+				status = "OK"
+				msg = fmt.Sprintf("%v", logSpec.ConstLabels)
+				pkey = ppkey
+				pval = ppval
 			}
 		}
 	}
