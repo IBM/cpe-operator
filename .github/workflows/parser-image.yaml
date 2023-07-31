@@ -4,13 +4,13 @@ on:
   push:
     branches:
       - main
-      - v1.0.0
+      - v1.0.1
     paths:
       - .github/workflows/**
       - cpe-parser/**
 
 env:
-  IMAGE_VERSION: '1.0.0'
+  IMAGE_VERSION: '1.0.1'
 
 jobs:    
   build-push-parser:
