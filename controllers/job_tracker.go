@@ -317,8 +317,11 @@ func (r *JobTracker) ProcessJobQueue() {
 				if putLogErr != nil {
 					r.Log.Info(fmt.Sprintf("PutLog Error #%v, parse raw log", err))
 					response, err = parseRawLog(parserKey, logBytes)
+					writeLogErr := r.writeLogToFile(benchmarkName, CLUSTER_ID, jobName, podName, logBytes)
+					if writeLogErr != nil {
+						r.Log.Info(fmt.Sprintf("writeLog Error #%v", writeLogErr))
+					}
 				} else {
-					r.writeLogToFile(benchmarkName, CLUSTER_ID, jobName, podName, logBytes)
 					r.Log.Info("Parse remote put log")
 					response, err = parseAndPushLog(instance, benchmarkName, jobName, podName, parserKey, constLabels)
 				}
@@ -527,7 +530,7 @@ func (r *JobTracker) writeLogToFile(benchmarkName, CLUSTER_ID, jobName, podName 
 		defer file.Close()
 		_, err = file.Write(data)
 		if err == nil {
-			fmt.Printf("Successfully save %s.\n", filePath)
+			r.Log.Info(fmt.Sprintf("Successfully save %s.\n", filePath))
 		}
 	}
 	return err
