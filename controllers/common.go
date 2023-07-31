@@ -48,6 +48,7 @@ const (
 	JOBHASH_KEY            = "cpe-jobhash"
 	HASH_DELIMIT           = "-cpeh-"
 	INVALID_REGEX          = "[^A-Za-z0-9]"
+	JOB_LOG_PATH           = "/cpe-local-log"
 )
 
 func GetInformerFromGVK(dc *discovery.DiscoveryClient, dyn dynamic.Interface, gvk schema.GroupVersionKind) (cache.SharedIndexInformer, dynamicinformer.DynamicSharedInformerFactory) {

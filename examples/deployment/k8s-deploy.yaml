@@ -853,7 +853,7 @@ spec:
               fieldPath: metadata.namespace
         - name: PARSER_SERVICE
           value: http://cpe-operator-cpe-parser.$(OPERATOR_NAMESPACE)
-        image: ghcr.io/ibm/cpe-operator/controller:v1.0.0
+        image: ghcr.io/ibm/cpe-operator/controller:v1.0.1
         imagePullPolicy: Always
         livenessProbe:
           httpGet:
@@ -900,7 +900,7 @@ spec:
         app: cpe-parser
     spec:
       containers:
-      - image: ghcr.io/ibm/cpe-operator/parser:v1.0.0
+      - image: ghcr.io/ibm/cpe-operator/parser:v1.0.1
         imagePullPolicy: Always
         name: cpe-parser
         ports:

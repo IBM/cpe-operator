@@ -25,6 +25,7 @@ import (
 	"fmt"
 	"io"
 	"io/ioutil"
+	"os"
 	"strconv"
 	"time"
 
@@ -317,6 +318,7 @@ func (r *JobTracker) ProcessJobQueue() {
 					r.Log.Info(fmt.Sprintf("PutLog Error #%v, parse raw log", err))
 					response, err = parseRawLog(parserKey, logBytes)
 				} else {
+					r.writeLogToFile(benchmarkName, CLUSTER_ID, jobName, podName, logBytes)
 					r.Log.Info("Parse remote put log")
 					response, err = parseAndPushLog(instance, benchmarkName, jobName, podName, parserKey, constLabels)
 				}
@@ -513,6 +515,22 @@ func (r *JobTracker) Init() {
 	s.AddEventHandler(handlers)
 	factory.Start(r.Quit)
 
+}
+
+func (r *JobTracker) writeLogToFile(benchmarkName, CLUSTER_ID, jobName, podName string, data []byte) (err error) {
+	if _, err = os.Stat(JOB_LOG_PATH); err == nil {
+		filePath := fmt.Sprintf("%s/%s_%s_%s_%s.log", JOB_LOG_PATH, benchmarkName, CLUSTER_ID, jobName, podName)
+		file, err := os.OpenFile(filePath, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0644)
+		if err != nil {
+			return err
+		}
+		defer file.Close()
+		_, err = file.Write(data)
+		if err == nil {
+			fmt.Printf("Successfully save %s.\n", filePath)
+		}
+	}
+	return err
 }
 
 func (r *JobTracker) indexOf(benchmarkName string) int {
