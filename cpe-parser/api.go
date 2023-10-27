@@ -35,6 +35,7 @@ var stressParser parser.Parser = parser.NewStressParser()
 var mlperfParser parser.Parser = parser.NewMlPerfParser()
 var fmworkParser parser.Parser = parser.NewFMWorkParser()
 var fmtrainParser parser.Parser = parser.NewFMTrainParser()
+var megatronParser parser.Parser = parser.NewMegatronParser()
 
 var parserMap map[string]parser.Parser = map[string]parser.Parser{
 	"codait":   codaitParser,
@@ -53,6 +54,7 @@ var parserMap map[string]parser.Parser = map[string]parser.Parser{
 	"mlperf":   mlperfParser,
 	"fmwork":   fmworkParser,
 	"fmtrain":  fmtrainParser,
+	"megatron": megatronParser,
 }
 
 /////////////////////////////////////////////
@@ -193,7 +195,8 @@ func ReqPushLog(w http.ResponseWriter, r *http.Request) {
 					}
 				}
 				status = "OK"
-				msg = fmt.Sprintf("%v", logSpec.ConstLabels)
+				dataBytes, _ := json.Marshal(values)
+				msg = string(dataBytes)
 				pkey = ppkey
 				pval = ppval
 			}
