@@ -185,7 +185,7 @@ func (c *ResultCollector) Collect(ch chan<- prometheus.Metric) {
 				values := make(map[string]interface{})
 				err := json.Unmarshal([]byte(item.Result), &values)
 				if err != nil {
-					c.Log.Info(fmt.Sprintf("Cannot parse values of %s from respone: %s", benchmarkName, item.Result))
+					c.Log.Info(fmt.Sprintf("Cannot parse values of %s from respone: %s: %v", benchmarkName, item.Result, err))
 					continue
 				}
 				jobName := item.JobName
